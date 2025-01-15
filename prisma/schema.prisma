@@ -1,0 +1,168 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               Int            @id @default(autoincrement())
+  email            String?        @unique
+  password         String
+  phoneNumber      String?        @unique
+  name             String
+  role             Role
+  username         String?        @unique
+  vehicles         Vehicle[]
+  bookings         Booking[]
+  reviews          Review[]
+  notifications    Notification[]
+  sentMessages     Message[]      @relation("SentMessages")
+  receivedMessages Message[]      @relation("ReceivedMessages")
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  Location         Location[]
+}
+
+model Location {
+  id        Int   @id @default(autoincrement())
+  userId    Int
+  latitude  Float
+  longitude Float
+  user      User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum Role {
+  CUSTOMER
+  SERVICE_PROVIDER
+  ADMIN
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+model ServiceProvider {
+  id             Int            @id @default(autoincrement())
+  email          String         @unique
+  password       String
+  phoneNumber    String
+  businessName   String
+  ownerName      String
+  location       String
+  latitude       Float
+  longitude      Float
+  services       Service[]
+  employees      Employee[]
+  reviews        Review[]
+  bookings       Booking[]
+  availabilities Availability[]
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+}
+
+
+model Review {
+  id                Int             @id @default(autoincrement())
+  userId            Int
+  serviceProviderId Int
+  rating            Float
+  comment           String?
+  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  serviceProvider   ServiceProvider @relation(fields: [serviceProviderId], references: [id], onDelete: Cascade)
+}
+model Vehicle {
+  id     Int    @id @default(autoincrement())
+  userId Int
+  make   String
+  model  String
+  year   Int
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Service {
+  id                Int             @id @default(autoincrement())
+  serviceProviderId Int
+  name              String
+  description       String
+  subServices       SubService[]
+  serviceProvider   ServiceProvider @relation(fields: [serviceProviderId], references: [id], onDelete: Cascade)
+  bookings          Booking[]
+}
+
+model SubService {
+  id        Int     @id @default(autoincrement())
+  serviceId Int
+  name      String
+  service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+}
+
+model Booking {
+  id                Int             @id @default(autoincrement())
+  userId            Int
+  serviceProviderId Int
+  serviceId         Int
+  employeeId        Int?
+  status            BookingStatus
+  scheduledAt       DateTime
+  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  serviceProvider   ServiceProvider @relation(fields: [serviceProviderId], references: [id], onDelete: Cascade)
+  service           Service         @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  employee          Employee?       @relation(fields: [employeeId], references: [id])
+  payments          Payment[]
+}
+
+model Payment {
+  id        Int           @id @default(autoincrement())
+  bookingId Int
+  status    PaymentStatus
+  booking   Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  message   String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+
+model Employee {
+  id                Int             @id @default(autoincrement())
+  name              String
+  serviceProviderId Int
+  serviceProvider   ServiceProvider @relation(fields: [serviceProviderId], references: [id], onDelete: Cascade)
+  bookings          Booking[]
+}
+
+model Availability {
+  id                Int             @id @default(autoincrement())
+  serviceProviderId Int
+  day               String
+  startTime         DateTime
+  endTime           DateTime
+  serviceProvider   ServiceProvider @relation(fields: [serviceProviderId], references: [id], onDelete: Cascade)
+}
+
+model Message {
+  id         Int      @id @default(autoincrement())
+  senderId   Int
+  receiverId Int
+  content    String
+  sentAt     DateTime @default(now())
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+}
