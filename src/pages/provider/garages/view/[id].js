@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
-import { fetchWithAuth } from "../../../../utils/api"; // Import the fetchWithAuth utility
+import { fetchWithAuth } from "../../../../utils/api";
 import ProviderLayout from "../../../../components/ProviderLayout";
 
 const GarageView = () => {
   const router = useRouter();
-  const { id } = router.query; // Get the garage ID from the URL
+  const { id } = router.query;
   const [garage, setGarage] = useState(null);
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -14,6 +14,7 @@ const GarageView = () => {
   // Form states for adding a service and sub-service
   const [newService, setNewService] = useState({ name: "", description: "" });
   const [newSubService, setNewSubService] = useState({ serviceId: "", name: "" });
+  const [isAddingSubService, setIsAddingSubService] = useState(false); // Track if the input is visible
 
   useEffect(() => {
     if (id) {
@@ -24,6 +25,7 @@ const GarageView = () => {
             throw new Error("Failed to fetch garage details");
           }
           const data = await response.body;
+          console.log(data);
           setGarage(data);
           setServices(data.services); // Assuming `services` is part of the garage response
         } catch (err) {
@@ -48,11 +50,11 @@ const GarageView = () => {
         }),
       });
 
-      if (!response.ok) {
+      if (!response.status == 201) {
         throw new Error("Failed to add service");
       }
 
-      const addedService = await response.json();
+      const addedService = await response.body;
       setServices((prev) => [...prev, addedService]);
       setNewService({ name: "", description: "" });
     } catch (err) {
@@ -60,25 +62,25 @@ const GarageView = () => {
     }
   };
 
-  const addSubService = async () => {
+  const addSubService = async (serviceId) => {
     try {
       const response = await fetchWithAuth(`/api/provider/subservice`, {
         method: "POST",
         body: JSON.stringify({
-          serviceId: newSubService.serviceId,
+          serviceId,
           name: newSubService.name,
         }),
       });
 
-      if (!response.ok) {
+      if (!response.status == 201) {
         throw new Error("Failed to add sub-service");
       }
 
       const addedSubService = await response.body;
       setServices((prev) =>
         prev.map((service) =>
-          service.id === newSubService.serviceId
-            ? { ...service, subServices: [...service.subServices, addedSubService] }
+          service.id === serviceId
+            ? { ...service, subServices: [...(service.subServices || []), addedSubService] }
             : service
         )
       );
@@ -88,17 +90,51 @@ const GarageView = () => {
     }
   };
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
+  const deleteService = async (serviceId) => {
+    try {
+      const response = await fetchWithAuth(`/api/provider/service/${serviceId}`, {
+        method: "DELETE",
+      });
 
-  if (error) {
-    return <div>Error: {error}</div>;
-  }
+      if (!response.status === 200) {
+        throw new Error("Failed to delete service");
+      }
 
-  if (!garage) {
-    return <div>Garage not found</div>;
-  }
+      setServices((prev) => prev.filter((service) => service.id !== serviceId));
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const deleteSubService = async (serviceId, subServiceId) => {
+    try {
+      const response = await fetchWithAuth(`/api/provider/subservice/${subServiceId}`, {
+        method: "DELETE",
+      });
+
+      if (!response.status === 200) {
+        throw new Error("Failed to delete sub-service");
+      }
+
+      setServices((prev) =>
+        prev.map((service) =>
+          service.id === serviceId
+            ? { ...service, subServices: service.subServices.filter((subService) => subService.id !== subServiceId) }
+            : service
+        )
+      );
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleSubServiceToggle = (serviceId) => {
+    setIsAddingSubService((prev) => (prev === serviceId ? false : serviceId));
+  };
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
+  if (!garage) return <div>Garage not found</div>;
 
   return (
     <ProviderLayout>
@@ -111,73 +147,116 @@ const GarageView = () => {
             Coordinates: {garage.latitude}, {garage.longitude}
           </p>
 
-          {/* Services Offered */}
+          {/* Services Section */}
           <h2 className="text-2xl font-semibold mb-3">Services</h2>
-          <ul className="list-disc pl-5">
-            {services.map((service) => (
-              <li key={service.id} className="mb-4">
-                <strong>{service.name}:</strong> {service.description}
-                <ul className="list-disc pl-8 mt-2">
-                  {service.subServices.map((subService) => (
-                    <li key={subService.id}>{subService.name}</li>
-                  ))}
-                </ul>
-              </li>
-            ))}
-          </ul>
+          <div className="flex flex-wrap gap-6">
+            {Array.isArray(services) && services.length > 0 ? (
+              services.map((service) => (
+                <div
+                  key={service.id}
+                  className="bg-white shadow rounded-lg p-6 w-full lg:w-full xl:w-full relative"
+                >
+                  <h3 className="text-xl font-bold">{service.name}</h3>
+                  <p className="text-sm text-gray-600 mt-2">{service.description}</p>
+
+                  {/* Delete Service Button */}
+                  <button
+                    onClick={() => deleteService(service.id)}
+                    className="absolute top-3 right-3 text-red-600 hover:text-red-800"
+                  >
+                    X
+                  </button>
+
+                  {/* SubServices */}
+                  <div className="mt-5">
+                    <h4 className="text-sm font-semibold">Sub-Services</h4>
+                    <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                      {Array.isArray(service.subServices) && service.subServices.length > 0 ? (
+                        service.subServices.map((subService) => (
+                          <div
+                            key={subService.id}
+                            className="flex items-center bg-gray-100 p-4 rounded-lg mb-3 relative"
+                          >
+                            <div className="w-16 h-16 bg-gray-200 rounded-md mr-4">
+                              {/* Placeholder for thumbnail */}
+                            </div>
+                            <div className="flex-1">
+                              <h5 className="font-semibold">{subService.name}</h5>
+                              <p className="text-sm text-gray-600">{subService.description}</p>
+                            </div>
+
+                            {/* Delete SubService Button */}
+                            <button
+                              onClick={() => deleteSubService(service.id, subService.id)}
+                              className="absolute top-2 right-2 text-red-600 hover:text-red-800"
+                            >
+                              X
+                            </button>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-xs text-gray-500">No sub-services</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Floating Add SubService Button */}
+                  <button
+                    onClick={() => handleSubServiceToggle(service.id)}
+                    className="absolute bottom-3 right-3 bg-indigo-600 text-white px-4 py-2 rounded-full hover:bg-indigo-700"
+                  >
+                    +
+                  </button>
+
+                  {/* Conditionally Render SubService Input */}
+                  {isAddingSubService === service.id && (
+                    <div className="mt-3 flex">
+                      <input
+                        type="text"
+                        placeholder="SubService Name"
+                        value={newSubService.serviceId === service.id ? newSubService.name : ""}
+                        onChange={(e) =>
+                          setNewSubService({ serviceId: service.id, name: e.target.value })
+                        }
+                        className="border p-2 rounded-md w-1/3 mr-2"
+                      />
+                      <button
+                        onClick={() => addSubService(service.id)}
+                        className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
+                      >
+                        Add
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))
+            ) : (
+              <p className="text-gray-500">No services available</p>
+            )}
+          </div>
 
           {/* Add Service */}
           <h2 className="text-2xl font-semibold mt-6">Add Service</h2>
-          <div className="mt-4">
+          <div className="mt-4 flex gap-2">
             <input
               type="text"
               placeholder="Service Name"
               value={newService.name}
               onChange={(e) => setNewService((prev) => ({ ...prev, name: e.target.value }))}
-              className="border p-2 rounded-md mr-2"
+              className="border p-2 rounded-md w-1/3"
             />
             <input
               type="text"
               placeholder="Service Description"
               value={newService.description}
               onChange={(e) => setNewService((prev) => ({ ...prev, description: e.target.value }))}
-              className="border p-2 rounded-md mr-2"
+              className="border p-2 rounded-md w-1/3"
             />
             <button
               onClick={addService}
               className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
             >
               Add Service
-            </button>
-          </div>
-
-          {/* Add SubService */}
-          <h2 className="text-2xl font-semibold mt-6">Add SubService</h2>
-          <div className="mt-4">
-            <select
-              value={newSubService.serviceId}
-              onChange={(e) => setNewSubService((prev) => ({ ...prev, serviceId: parseInt(e.target.value) }))}
-              className="border p-2 rounded-md mr-2"
-            >
-              <option value="">Select Service</option>
-              {services.map((service) => (
-                <option key={service.id} value={service.id}>
-                  {service.name}
-                </option>
-              ))}
-            </select>
-            <input
-              type="text"
-              placeholder="SubService Name"
-              value={newSubService.name}
-              onChange={(e) => setNewSubService((prev) => ({ ...prev, name: e.target.value }))}
-              className="border p-2 rounded-md mr-2"
-            />
-            <button
-              onClick={addSubService}
-              className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
-            >
-              Add SubService
             </button>
           </div>
         </div>

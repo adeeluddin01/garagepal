@@ -16,20 +16,25 @@ export default async function handler(req, res) {
       console.log(decoded, "from garage api");
 
       // Fetch garage details by ID
-      const garage = await prisma.serviceProvider.findUnique({
-        where: {
-          id: parseInt(id),
-        },
-        include: {
-          services: true,
-          reviews: {
-            include: {
-              user: true, // Fetch the user who left the review
-            },
+
+    // Fetch garage details by ID, including subServices
+    const garage = await prisma.serviceProvider.findUnique({
+      where: {
+        id: parseInt(id),
+      },
+      include: {
+        services: {
+          include: {
+            subServices: true, // Include subServices for each service
           },
         },
-      });
-
+        reviews: {
+          include: {
+            user: true, // Fetch the user who left the review
+          },
+        },
+      },
+    });
       if (!garage) {
         return res.status(404).json({ error: "Garage not found" });
       }
