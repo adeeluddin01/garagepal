@@ -13,10 +13,10 @@ export default async function handler(req, res) {
     try {
       // Verify the token
       const decoded = verifyToken(token);
+        console.log(req.query)
 
       // Extract the subServiceId from the query parameters
-      const { subServiceId } = req.query;
-
+      const subServiceId  = req.query.id;
       if (!subServiceId) {
         return res.status(400).json({ error: "Sub-service ID required" });
       }

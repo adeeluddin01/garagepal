@@ -8,6 +8,7 @@ const DynamicMap = dynamic(() => import('../components/SearchMap.js'), {
 });
 
 export default function Home() {
+  
   useEffect(() => {
     const handleScroll = () => {
       document.querySelectorAll(".fade-in").forEach((el) => {
