@@ -3,51 +3,7 @@ import prisma from "../../../../lib/prisma";
 
 export default async function handler(req, res) {
   if (req.method === "POST") {
-    // Check for Authorization header
-    const token = req.headers.authorization?.split(" ")[1];
-    console.log(token, "from garage api");
-    if (!token) {
-      return res.status(401).json({ error: "No token provided" });
-    }
-
-    // Separate the token verification into its own try-catch block
-    try {
-      const decoded = verifyToken(token);
-      console.log(decoded, "from garage api");
-
-      // After successful token verification, proceed with the database operation
-      const { email, password, phoneNumber, businessName, ownerName, location, latitude, longitude } = req.body;
-
-      try {
-        // Create a new service provider (garage)
-        const newServiceProvider = await prisma.serviceProvider.create({
-          data: {
-            email,
-            password, // Ideally, hash the password before saving
-            phoneNumber,
-            businessName,
-            ownerName,
-            location,
-            latitude: parseFloat(latitude),
-            longitude: parseFloat(longitude),
-          },
-        });
-
-        return res.status(201).json(newServiceProvider);
-      } catch (dbError) {
-        console.error("Database error:", dbError);
-        return res.status(500).json({ error: "Database operation failed" });
-      }
-
-    } catch (tokenError) {
-      console.error("Token verification error:", tokenError);
-      return res.status(401).json({ error: "Invalid token or token expired" });
-    }
-  }
-
-  // Handle GET request to fetch all service providers (garages)
-  else if (req.method === "GET") {
-    // Optional: Check for the Authorization header if you want to validate token before fetching garages
+    // Authorization for adding a garage
     const token = req.headers.authorization?.split(" ")[1];
     if (!token) {
       return res.status(401).json({ error: "No token provided" });
@@ -55,32 +11,53 @@ export default async function handler(req, res) {
 
     try {
       const decoded = verifyToken(token);
-      console.log(decoded, "from garage api");
+      console.log(decoded, "from garage API");
 
-      // Fetch all garages (service providers) from the database
-      const garages = await prisma.serviceProvider.findMany({
-        // You can add any filters or pagination here if needed
-        select: {
-          id: true,
-          email: true,
-          businessName: true,
-          ownerName: true,
-          location: true,
-          latitude: true,
-          longitude: true,
-          createdAt: true,
+      const { email, password, phoneNumber, businessName, ownerName, location, latitude, longitude, description } = req.body;
+
+      // Create a new garage (service provider)
+      const newServiceProvider = await prisma.serviceProvider.create({
+        data: {
+          email,
+          password, // Hash before saving in production
+          phoneNumber,
+          businessName,
+          ownerName,
+          location,
+          latitude: parseFloat(latitude),
+          longitude: parseFloat(longitude),
+          description,
         },
       });
 
-      // Return the list of garages
-      return res.status(200).json(garages);
-    } catch (tokenError) {
-      console.error("Token verification error:", tokenError);
-      return res.status(401).json({ error: "Invalid token or token expired" });
+      return res.status(201).json(newServiceProvider);
+    } catch (error) {
+      console.error("Database error:", error);
+      return res.status(500).json({ error: "Database operation failed" });
     }
   }
 
-  // Handle unsupported methods
+  // ✅ Fetch all garages along with their services and sub-services
+  else if (req.method === "GET") {
+    try {
+      const garages = await prisma.serviceProvider.findMany({
+        include: {
+          services: {
+            include: {
+              subServices: true, // ✅ Now includes sub-services
+            },
+          },
+        },
+      });
+
+      return res.status(200).json(garages);
+    } catch (error) {
+      console.error("Error fetching garages:", error);
+      return res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+
+  // ❌ Handle unsupported methods
   else {
     return res.status(405).json({ error: "Method Not Allowed" });
   }

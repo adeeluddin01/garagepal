@@ -22,6 +22,6 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "prisma/seed.js", "src/pages/_app.js", "src/components/SearchMap.js", "src/pages/api/search.js", "src/utils/api.ts", "src/pages/api/auth/refresh.js", "prisma/seeds.js"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "prisma/seed.js", "src/pages/_app.js", "src/components/SearchMap.js", "src/pages/api/search.js", "src/utils/api.ts", "src/pages/api/auth/refresh.js", "prisma/seedGarage.js"],
   "exclude": ["node_modules"]
 }
