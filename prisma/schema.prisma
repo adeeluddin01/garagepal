@@ -15,6 +15,7 @@ model User {
   name             String
   role             Role
   username         String?        @unique
+  serviceProviders ServiceProvider[] 
   vehicles         Vehicle[]
   bookings         Booking[]
   reviews          Review[]
@@ -61,6 +62,8 @@ model ServiceProvider {
   phoneNumber    String
   businessName   String
   ownerName      String
+  userId         Int?             
+  user           User?           @relation(fields: [userId], references: [id], onDelete: Cascade) 
   location       String
   latitude       Float
   longitude      Float

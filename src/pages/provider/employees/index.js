@@ -46,7 +46,7 @@ const EmployeeList = () => {
                   />
                   <div className="p-4">
                     <h3 className="text-2xl font-semibold text-indigo-600">{employee.name}</h3>
-                    <p className="text-gray-600">Service Provider: {employee.serviceProvider.businessName}</p>
+                    <p className="text-gray-600">Employee of Garage: {employee.serviceProvider.businessName}</p>
                     <button
                       onClick={() => router.push(`/provider/employees/view/${employee.id}`)}
                       className="mt-4 py-2 px-4 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"

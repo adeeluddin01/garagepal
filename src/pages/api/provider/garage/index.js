@@ -27,6 +27,7 @@ export default async function handler(req, res) {
             phoneNumber,
             businessName,
             ownerName,
+            userId:decoded.id,
             location,
             latitude: parseFloat(latitude),
             longitude: parseFloat(longitude),
@@ -59,6 +60,10 @@ export default async function handler(req, res) {
 
       // Fetch all garages (service providers) from the database
       const garages = await prisma.serviceProvider.findMany({
+        where: {
+          userId: decoded.id, // Only fetch garages where userId matches decoded token's id
+        },
+  
         // You can add any filters or pagination here if needed
         select: {
           id: true,

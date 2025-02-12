@@ -1,15 +1,34 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { fetchWithAuth } from "../../../utils/api"; // Utility for auth fetch
 import ProviderLayout from "../../../components/ProviderLayout";
 
 const AddEmployee = () => {
   const [name, setName] = useState("");
+  const [serviceProvider, setServiceProvider] = useState(""); // Selected garage ID
+  const [garages, setGarages] = useState([]); // List of garages
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
 
   const router = useRouter();
+
+  // Fetch garages when component mounts
+  useEffect(() => {
+    const fetchGarages = async () => {
+      try {
+        const response = await fetchWithAuth("/api/provider/garage");
+        console.log(typeof response.status)
+        if (response.status != 200 ) console.log("Failed to fetch garages");
+        const data = await response.body;
+        setGarages(data);
+      } catch (err) {
+        setError("Error fetching garages");
+      }
+    };
+
+    fetchGarages();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -20,16 +39,17 @@ const AddEmployee = () => {
     try {
       const response = await fetchWithAuth("/api/provider/employees", {
         method: "POST",
-        body: JSON.stringify({ name }),
+        body: JSON.stringify({ name, serviceProviderId:parseInt(serviceProvider) }),
         headers: { "Content-Type": "application/json" },
       });
 
       if (response.status === 201) {
         setSuccess("Employee added successfully!");
-        setName(""); // Clear form
-        setTimeout(() => router.push("/provider/employees"), 1500); // Redirect after success
+        setName("");
+        setServiceProvider(""); // Reset form
+        setTimeout(() => router.push("/provider/employees"), 1500);
       } else {
-        const errorData = await response.body;
+        const errorData = await response.json();
         setError(errorData.error || "Failed to add employee.");
       }
     } catch (err) {
@@ -58,6 +78,23 @@ const AddEmployee = () => {
                 required
                 className="w-full p-2 border rounded-md focus:ring focus:ring-indigo-300"
               />
+            </div>
+
+            <div>
+              <label className="block text-gray-700">Select Garage</label>
+              <select
+                value={serviceProvider}
+                onChange={(e) => setServiceProvider(e.target.value)}
+                required
+                className="w-full p-2 border rounded-md focus:ring focus:ring-indigo-300"
+              >
+                <option value="" disabled>Select a garage</option>
+                {garages.map((garage) => (
+                  <option key={garage.id} value={garage.id}>
+                    {garage.businessName}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <button
