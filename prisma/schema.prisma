@@ -118,7 +118,7 @@ model Booking {
   serviceProviderId Int
   serviceId         Int
   employeeId        Int?
-  status            BookingStatus
+  status            BookingStatus @default(PENDING)
   scheduledAt       DateTime
   user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   serviceProvider   ServiceProvider @relation(fields: [serviceProviderId], references: [id], onDelete: Cascade)

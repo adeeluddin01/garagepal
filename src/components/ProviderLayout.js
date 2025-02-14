@@ -12,6 +12,8 @@ const ProviderLayout = ({ children }) => {
     { name: "Dashboard", icon: <FaHome />, route: "/provider/dashboard" },
     { name: "Garages", icon: <FaGg />, route: "/provider/garages" },
     { name: "Employees", icon: <FaUsers />, route: "/provider/employees" },
+    { name: "Bookings", icon: <FaUsers />, route: "/provider/bookings" },
+
   ];
 
   return (
