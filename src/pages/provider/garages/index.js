@@ -23,7 +23,7 @@ const GarageList = () => {
       });
 
       const data = await response.body;
-
+      console.log(data)
       if (data.length === 0) {
         setHasMore(false); // No more garages to load
       } else {

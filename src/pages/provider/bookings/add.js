@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
-import { fetchWithAuth } from "../../../utils/api"; // Utility for auth fetch
+import { fetchWithAuth } from "../../../utils/api";
 import ProviderLayout from "../../../components/ProviderLayout";
 
 const AddBooking = () => {
@@ -8,7 +8,7 @@ const AddBooking = () => {
   const [service, setService] = useState("");
   const [scheduledAt, setScheduledAt] = useState("");
   const [serviceProviders, setServiceProviders] = useState([]);
-  const [services, setServices] = useState([]);
+  const [filteredServices, setFilteredServices] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
@@ -16,25 +16,35 @@ const AddBooking = () => {
   const router = useRouter();
 
   useEffect(() => {
-    const fetchOptions = async () => {
+    const fetchProviders = async () => {
       try {
         const providerRes = await fetchWithAuth("/api/provider/garage");
-        const serviceRes = await fetchWithAuth("/api/provider/service");
-        console.log("asdasd",providerRes,serviceRes)
-        if (providerRes.status === 200) {
-          setServiceProviders(await providerRes.body);
-        }
 
-        if (serviceRes.status === 200) {
-          setServices(await serviceRes.body);
+        if (providerRes.status === 200) {
+          const providersData = await providerRes.body;
+          setServiceProviders(providersData);
         }
       } catch (err) {
-        setError("Error fetching data");
+        setError("Error fetching service providers");
       }
     };
 
-    fetchOptions();
+    fetchProviders();
   }, []);
+
+  // When service provider changes, filter the services
+  useEffect(() => {
+    if (serviceProvider) {
+      const selectedProvider = serviceProviders.find((p) => p.id === parseInt(serviceProvider));
+
+      if (selectedProvider) {
+        setFilteredServices(selectedProvider.services || []);
+        setService(""); // Reset service selection
+      }
+    } else {
+      setFilteredServices([]);
+    }
+  }, [serviceProvider, serviceProviders]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -78,6 +88,7 @@ const AddBooking = () => {
           {success && <p className="text-green-500">{success}</p>}
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Select Service Provider */}
             <div>
               <label className="block text-gray-700">Select Service Provider</label>
               <select
@@ -95,6 +106,7 @@ const AddBooking = () => {
               </select>
             </div>
 
+            {/* Select Service */}
             <div>
               <label className="block text-gray-700">Select Service</label>
               <select
@@ -102,9 +114,10 @@ const AddBooking = () => {
                 onChange={(e) => setService(e.target.value)}
                 required
                 className="w-full p-2 border rounded-md focus:ring focus:ring-indigo-300"
+                disabled={!filteredServices.length}
               >
                 <option value="" disabled>Select a service</option>
-                {services.map((service) => (
+                {filteredServices.map((service) => (
                   <option key={service.id} value={service.id}>
                     {service.name}
                   </option>
@@ -112,6 +125,7 @@ const AddBooking = () => {
               </select>
             </div>
 
+            {/* Schedule Date & Time */}
             <div>
               <label className="block text-gray-700">Schedule Date & Time</label>
               <input
@@ -123,6 +137,7 @@ const AddBooking = () => {
               />
             </div>
 
+            {/* Submit Button */}
             <button
               type="submit"
               className="w-full py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"

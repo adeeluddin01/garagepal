@@ -2,19 +2,19 @@ import { verifyToken } from "../../../../lib/auth"; // Token verification utilit
 import prisma from "../../../../lib/prisma"; // Prisma client
 
 export default async function handler(req, res) {
-  const token = req.headers.authorization?.split(" ")[1];
+  // const token = req.headers.authorization?.split(" ")[1];
 
-  if (!token) {
-    return res.status(401).json({ error: "No token provided" });
-  }
+  // if (!token) {
+  //   return res.status(401).json({ error: "No token provided" });
+  // }
 
-  let decoded;
-  try {
-    decoded = verifyToken(token);
-  } catch (error) {
-    console.error("Token verification failed:", error);
-    return res.status(401).json({ error: "Invalid or expired token" });
-  }
+  // let decoded;
+  // try {
+  //   decoded = verifyToken(token);
+  // } catch (error) {
+  //   console.error("Token verification failed:", error);
+  //   return res.status(401).json({ error: "Invalid or expired token" });
+  // }
 
   if (req.method === "GET") {
     // ✅ Fetch all services

@@ -52,7 +52,6 @@ export default async function handler(req, res) {
     limit = parseInt(limit, 10);
     if (isNaN(page) || page < 1) page = 1;
     if (isNaN(limit) || limit < 1) limit = 10;
-    console.log(req)
     try {
         const bookings = await prisma.booking.findMany({
             where: { userId: decoded.id }, // ✅ Fetch bookings for a specific customer

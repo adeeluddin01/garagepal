@@ -63,8 +63,6 @@ export default async function handler(req, res) {
         where: {
           userId: decoded.id, // Only fetch garages where userId matches decoded token's id
         },
-  
-        // You can add any filters or pagination here if needed
         select: {
           id: true,
           email: true,
@@ -74,8 +72,22 @@ export default async function handler(req, res) {
           latitude: true,
           longitude: true,
           createdAt: true,
+          services: {
+            select: {
+              id: true,
+              name: true,
+              description: true,
+              subServices: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
+          },
         },
       });
+      
 
       // Return the list of garages
       return res.status(200).json(garages);
