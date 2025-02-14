@@ -111,6 +111,9 @@ model Service {
 model SubService {
   id        Int     @id @default(autoincrement())
   serviceId Int
+  cost Int?
+    description       String  @default("")
+
   name      String
   service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
 }
@@ -123,7 +126,7 @@ model Booking {
   status            BookingStatus @default(PENDING)
   scheduledAt       DateTime
   customerId        Int?
-
+  cost              Int?
   user              User @relation(name: "UserBooking", fields: [userId], references: [id], onDelete: Cascade)
   customer          User? @relation(name: "CustomerBooking", fields: [customerId], references: [id], onDelete: Cascade)
 
@@ -136,7 +139,9 @@ model Booking {
 
 model Payment {
   id        Int           @id @default(autoincrement())
+  money     Int           @default(0)
   bookingId Int
+  description String?
   status    PaymentStatus
   booking   Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
 }

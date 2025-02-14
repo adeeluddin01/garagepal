@@ -18,32 +18,50 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: "Invalid token or token expired" });
   }
 
-  if (req.method === "POST") {
-    const { serviceProviderId, serviceId, scheduledAt } = req.body;
 
+
+  if (req.method === "POST") {
+    console.log(req.body)
+
+    const { serviceProviderId, subServiceId, employeeId, scheduledAt, subServiceCost } = req.body;
     // Validate required fields
-    if (!serviceProviderId || !serviceId || !scheduledAt) {
+    if (!serviceProviderId || !subServiceId || !scheduledAt || subServiceCost === undefined) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
     try {
+
+      const userId = decoded.id
+
+      // Create the booking
       const newBooking = await prisma.booking.create({
         data: {
-          userId: decoded.id,
+          userId,
           serviceProviderId,
-          serviceId,
+          serviceId: subServiceId, // subServiceId replaces serviceId
+          employeeId: employeeId ? parseInt(employeeId) : null,
           scheduledAt: new Date(scheduledAt),
           status: "PENDING",
+          cost: subServiceCost, // Store cost in the booking
         },
       });
 
-      return res.status(201).json(newBooking);
+      // Create the payment record for the booking
+      const newPayment = await prisma.payment.create({
+        data: {
+          money: subServiceCost,
+          bookingId: newBooking.id,
+          description: "Payment for booking",
+          status: "PENDING", // Initial status
+        },
+      });
+
+      return res.status(201).json({ booking: newBooking, payment: newPayment });
     } catch (dbError) {
       console.error("Database error while creating booking:", dbError);
-      return res.status(500).json({ error: "Failed to create booking" });
+      return res.status(500).json({ error: "Failed to create booking and payment" });
     }
   }
-
   if (req.method === "GET") {
     let { page = 1, limit = 10 } = req.query;
 

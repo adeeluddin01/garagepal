@@ -13,7 +13,7 @@ const GarageView = () => {
 
   // Form states for adding a service and sub-service
   const [newService, setNewService] = useState({ name: "", description: "" });
-  const [newSubService, setNewSubService] = useState({ serviceId: "", name: "" });
+  const [newSubService, setNewSubService] = useState({ serviceId: "", name: "", description: "", cost: "" });
   const [isAddingSubService, setIsAddingSubService] = useState(false); // Track if the input is visible
 
   useEffect(() => {
@@ -69,13 +69,15 @@ const GarageView = () => {
         body: JSON.stringify({
           serviceId,
           name: newSubService.name,
+          description: newSubService.description, // Include description
+          cost: parseInt(newSubService.cost), // Include cost
         }),
       });
-
-      if (!response.status == 201) {
+  
+      if (response.status !== 201) {
         throw new Error("Failed to add sub-service");
       }
-
+  
       const addedSubService = await response.body;
       setServices((prev) =>
         prev.map((service) =>
@@ -84,11 +86,13 @@ const GarageView = () => {
             : service
         )
       );
-      setNewSubService({ serviceId: "", name: "" });
+      setNewSubService({ serviceId: "", name: "", description: "", cost: "" }); // Reset input fields
     } catch (err) {
       alert(err.message);
     }
   };
+  
+  
 
   const deleteService = async (serviceId) => {
     try {
@@ -181,9 +185,11 @@ const GarageView = () => {
                               {/* Placeholder for thumbnail */}
                             </div>
                             <div className="flex-1">
-                              <h5 className="font-semibold">{subService.name}</h5>
-                              <p className="text-sm text-gray-600">{subService.description}</p>
-                            </div>
+  <h5 className="font-semibold">{subService.name}</h5>
+  <p className="text-sm text-gray-600">{subService.description}</p>
+  <p className="text-sm font-semibold text-indigo-600">Cost: {subService.cost}</p>
+</div>
+
 
                             {/* Delete SubService Button */}
                             <button
@@ -210,24 +216,44 @@ const GarageView = () => {
 
                   {/* Conditionally Render SubService Input */}
                   {isAddingSubService === service.id && (
-                    <div className="mt-3 flex">
-                      <input
-                        type="text"
-                        placeholder="SubService Name"
-                        value={newSubService.serviceId === service.id ? newSubService.name : ""}
-                        onChange={(e) =>
-                          setNewSubService({ serviceId: service.id, name: e.target.value })
-                        }
-                        className="border p-2 rounded-md w-1/3 mr-2"
-                      />
-                      <button
-                        onClick={() => addSubService(service.id)}
-                        className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
-                      >
-                        Add
-                      </button>
-                    </div>
-                  )}
+  <div className="mt-3 flex flex-wrap gap-2">
+    <input
+      type="text"
+      placeholder="SubService Name"
+      value={newSubService.serviceId === service.id ? newSubService.name : ""}
+      onChange={(e) =>
+        setNewSubService((prev) => ({ ...prev, serviceId: service.id, name: e.target.value }))
+      }
+      className="border p-2 rounded-md w-1/4"
+    />
+    <input
+      type="text"
+      placeholder="Description"
+      value={newSubService.serviceId === service.id ? newSubService.description : ""}
+      onChange={(e) =>
+        setNewSubService((prev) => ({ ...prev, serviceId: service.id, description: e.target.value }))
+      }
+      className="border p-2 rounded-md w-1/3"
+    />
+    <input
+      type="number"
+      placeholder="Cost"
+      value={newSubService.serviceId === service.id ? newSubService.cost : ""}
+      onChange={(e) =>
+        setNewSubService((prev) => ({ ...prev, serviceId: service.id, cost: e.target.value }))
+      }
+      className="border p-2 rounded-md w-1/6"
+    />
+    <button
+      onClick={() => addSubService(service.id)}
+      className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
+    >
+      Add
+    </button>
+  </div>
+)}
+
+
                 </div>
               ))
             ) : (

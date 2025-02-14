@@ -72,6 +72,8 @@ export default async function handler(req, res) {
           latitude: true,
           longitude: true,
           createdAt: true,
+          employees: true,
+
           services: {
             select: {
               id: true,
@@ -81,6 +83,8 @@ export default async function handler(req, res) {
                 select: {
                   id: true,
                   name: true,
+                  cost: true,
+
                 },
               },
             },

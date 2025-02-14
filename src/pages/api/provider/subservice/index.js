@@ -15,8 +15,8 @@ export default async function handler(req, res) {
       const decoded = verifyToken(token);
       const reqbody = JSON.parse(req.body);
       // Extract data from the request body
-      const { serviceId, name, description } = reqbody;
-      console.log(serviceId, name, description);
+      const { serviceId, name, description ,cost } = reqbody;
+      console.log(reqbody);
       if (!serviceId || !name) {
         return res.status(400).json({ error: "Missing required fields" });
       }
@@ -26,6 +26,7 @@ export default async function handler(req, res) {
         data: {
           name,
           description,
+          cost,
           service: {
             connect: {
               id: serviceId,
