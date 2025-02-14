@@ -6,7 +6,6 @@ datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
 }
-
 model User {
   id               Int            @id @default(autoincrement())
   email            String?        @unique
@@ -18,7 +17,10 @@ model User {
   avatar           String?
   serviceProviders ServiceProvider[] 
   vehicles         Vehicle[]
-  bookings         Booking[]
+  
+  userBookings     Booking[]      @relation("UserBooking") // For userId relation
+  customerBookings Booking[]      @relation("CustomerBooking") // For customerId relation
+
   reviews          Review[]
   notifications    Notification[]
   sentMessages     Message[]      @relation("SentMessages")
@@ -27,6 +29,7 @@ model User {
   updatedAt        DateTime       @updatedAt
   Location         Location[]
 }
+
 
 model Location {
   id        Int   @id @default(autoincrement())
@@ -112,10 +115,12 @@ model Service {
 model SubService {
   id        Int     @id @default(autoincrement())
   serviceId Int
+  cost Int?
+    description       String  @default("")
+
   name      String
   service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
 }
-
 model Booking {
   id                Int             @id @default(autoincrement())
   userId            Int
@@ -124,16 +129,23 @@ model Booking {
   employeeId        Int?
   status            BookingStatus @default(PENDING)
   scheduledAt       DateTime
-  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  customerId        Int?
+  cost              Int?
+  user              User @relation(name: "UserBooking", fields: [userId], references: [id], onDelete: Cascade)
+  customer          User? @relation(name: "CustomerBooking", fields: [customerId], references: [id], onDelete: Cascade)
+
   serviceProvider   ServiceProvider @relation(fields: [serviceProviderId], references: [id], onDelete: Cascade)
   service           Service         @relation(fields: [serviceId], references: [id], onDelete: Cascade)
   employee          Employee?       @relation(fields: [employeeId], references: [id])
   payments          Payment[]
 }
 
+
 model Payment {
   id        Int           @id @default(autoincrement())
+  money     Int           @default(0)
   bookingId Int
+  description String?
   status    PaymentStatus
   booking   Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
 }

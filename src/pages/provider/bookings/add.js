@@ -1,14 +1,17 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
-import { fetchWithAuth } from "../../../utils/api"; // Utility for auth fetch
+import { fetchWithAuth } from "../../../utils/api";
 import ProviderLayout from "../../../components/ProviderLayout";
 
 const AddBooking = () => {
   const [serviceProvider, setServiceProvider] = useState("");
-  const [service, setService] = useState("");
+  const [subService, setSubService] = useState("");
+  const [subServiceCost, setSubServiceCost] = useState(0);
+  const [employee, setEmployee] = useState("");
   const [scheduledAt, setScheduledAt] = useState("");
   const [serviceProviders, setServiceProviders] = useState([]);
-  const [services, setServices] = useState([]);
+  const [filteredSubServices, setFilteredSubServices] = useState([]);
+  const [filteredEmployees, setFilteredEmployees] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
@@ -16,39 +19,79 @@ const AddBooking = () => {
   const router = useRouter();
 
   useEffect(() => {
-    const fetchOptions = async () => {
+    const fetchProviders = async () => {
       try {
         const providerRes = await fetchWithAuth("/api/provider/garage");
-        const serviceRes = await fetchWithAuth("/api/provider/service");
-        console.log("asdasd",providerRes,serviceRes)
-        if (providerRes.status === 200) {
-          setServiceProviders(await providerRes.body);
-        }
 
-        if (serviceRes.status === 200) {
-          setServices(await serviceRes.body);
+        if (providerRes.status === 200) {
+          const providersData = await providerRes.body;
+          setServiceProviders(providersData);
         }
       } catch (err) {
-        setError("Error fetching data");
+        setError("Error fetching service providers");
       }
     };
 
-    fetchOptions();
+    fetchProviders();
   }, []);
+
+  useEffect(() => {
+    if (serviceProvider) {
+      const selectedProvider = serviceProviders.find((p) => p.id === parseInt(serviceProvider));
+
+      if (selectedProvider) {
+        const allSubServices = selectedProvider.services?.flatMap((service) =>
+          service.subServices?.map((sub) => ({
+            ...sub,
+            serviceName: service.name,
+            cost: sub.cost ?? 0, // Default cost to 0 if missing
+          })) || []
+        );
+
+        setFilteredSubServices(allSubServices || []);
+        setFilteredEmployees(selectedProvider.employees || []);
+        setSubService(""); // Reset subservice selection
+        setSubServiceCost(0); // Reset cost
+        setEmployee(""); // Reset employee selection
+      }
+    } else {
+      setFilteredSubServices([]);
+      setFilteredEmployees([]);
+    }
+  }, [serviceProvider, serviceProviders]);
+
+  const handleSubServiceChange = (e) => {
+    const selectedSubServiceId = e.target.value;
+    setSubService(selectedSubServiceId);
+
+    // Find the selected subservice to get its cost
+    const selectedSubService = filteredSubServices.find((sub) => sub.id === parseInt(selectedSubServiceId));
+    setSubServiceCost(selectedSubService ? selectedSubService.cost : 0);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
     setSuccess(null);
-
+    console.log({
+        userId: 1, // Replace with actual user ID from auth context
+        serviceProviderId: parseInt(serviceProvider),
+        subServiceId: parseInt(subService),
+        subServiceCost, // Include cost in request
+        employeeId: employee ? parseInt(employee) : null,
+        scheduledAt: new Date(scheduledAt).toISOString(),
+        status: "PENDING",
+      })
     try {
-      const response = await fetchWithAuth("/api/bookings", {
+      const response = await fetchWithAuth("/api/provider/bookings", {
         method: "POST",
         body: JSON.stringify({
           userId: 1, // Replace with actual user ID from auth context
           serviceProviderId: parseInt(serviceProvider),
-          serviceId: parseInt(service),
+          subServiceId: parseInt(subService),
+          subServiceCost, // Include cost in request
+          employeeId: employee ? parseInt(employee) : null,
           scheduledAt: new Date(scheduledAt).toISOString(),
           status: "PENDING",
         }),
@@ -78,6 +121,7 @@ const AddBooking = () => {
           {success && <p className="text-green-500">{success}</p>}
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Select Service Provider */}
             <div>
               <label className="block text-gray-700">Select Service Provider</label>
               <select
@@ -95,23 +139,62 @@ const AddBooking = () => {
               </select>
             </div>
 
+            {/* Select SubService */}
             <div>
-              <label className="block text-gray-700">Select Service</label>
+              <label className="block text-gray-700">Select Subservice</label>
               <select
-                value={service}
-                onChange={(e) => setService(e.target.value)}
+                value={subService}
+                onChange={handleSubServiceChange}
                 required
                 className="w-full p-2 border rounded-md focus:ring focus:ring-indigo-300"
+                disabled={!filteredSubServices.length}
               >
-                <option value="" disabled>Select a service</option>
-                {services.map((service) => (
-                  <option key={service.id} value={service.id}>
-                    {service.name}
+                <option value="" disabled>Select a subservice</option>
+                {filteredSubServices.length > 0 &&
+                  [...new Set(filteredSubServices.map((s) => s.serviceName))].map((serviceName) => (
+                    <optgroup key={serviceName} label={serviceName}>
+                      {filteredSubServices
+                        .filter((sub) => sub.serviceName === serviceName)
+                        .map((sub) => (
+                          <option key={sub.id} value={sub.id}>
+                            {sub.name} - ${sub.cost}
+                          </option>
+                        ))}
+                    </optgroup>
+                  ))}
+              </select>
+            </div>
+
+            {/* Display Cost */}
+            <div>
+              <label className="block text-gray-700">Selected Subservice Cost</label>
+              <input
+                type="text"
+                value={`$${subServiceCost}`}
+                disabled
+                className="w-full p-2 border bg-gray-100 rounded-md"
+              />
+            </div>
+
+            {/* Select Employee (Optional) */}
+            <div>
+              <label className="block text-gray-700">Assign Employee</label>
+              <select
+                value={employee}
+                onChange={(e) => setEmployee(e.target.value)}
+                className="w-full p-2 border rounded-md focus:ring focus:ring-indigo-300"
+                disabled={!filteredEmployees.length}
+              >
+                <option value="">Select an employee (optional)</option>
+                {filteredEmployees.map((emp) => (
+                  <option key={emp.id} value={emp.id}>
+                    {emp.name}
                   </option>
                 ))}
               </select>
             </div>
 
+            {/* Schedule Date & Time */}
             <div>
               <label className="block text-gray-700">Schedule Date & Time</label>
               <input
@@ -123,6 +206,7 @@ const AddBooking = () => {
               />
             </div>
 
+            {/* Submit Button */}
             <button
               type="submit"
               className="w-full py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
