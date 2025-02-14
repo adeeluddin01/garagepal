@@ -28,8 +28,9 @@ export default async function handler(req, res) {
           id: true,
           email: true,
           name: true,
+          avatar: true,
           phoneNumber: true,
-
+          vehicles: true,
           role: true,
         },
       });

@@ -15,6 +15,7 @@ model User {
   name             String
   role             Role
   username         String?        @unique
+  avatar           String?
   serviceProviders ServiceProvider[] 
   vehicles         Vehicle[]
   bookings         Booking[]
@@ -89,9 +90,12 @@ model Review {
 model Vehicle {
   id     Int    @id @default(autoincrement())
   userId Int
+  vehicleNo String
+  vin String
   make   String
   model  String
   year   Int
+  pic String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
