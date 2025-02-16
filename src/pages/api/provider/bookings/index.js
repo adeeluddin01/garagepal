@@ -21,47 +21,41 @@ export default async function handler(req, res) {
 
 
   if (req.method === "POST") {
-    console.log(req.body)
 
-    const { serviceProviderId, subServiceId, employeeId, scheduledAt, subServiceCost } = req.body;
+
+    const { serviceProviderId, subServiceId, employeeId, scheduledAt, subServiceCost,vehicleId,customerId } = req.body;
     // Validate required fields
-    if (!serviceProviderId || !subServiceId || !scheduledAt || subServiceCost === undefined) {
+    if (!serviceProviderId || !subServiceId || !scheduledAt || !subServiceCost || !vehicleId || !customerId === undefined) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
+
     try {
+      const userId = decoded.id;
+      console.log("Creating Booking:", { userId, serviceProviderId, subServiceId, employeeId, scheduledAt, customerId, subServiceCost, vehicleId });
 
-      const userId = decoded.id
-
-      // Create the booking
+      // ✅ First, create the Booking
       const newBooking = await prisma.booking.create({
         data: {
           userId,
           serviceProviderId,
-          serviceId: subServiceId, // subServiceId replaces serviceId
+          subServiceId,
           employeeId: employeeId ? parseInt(employeeId) : null,
           scheduledAt: new Date(scheduledAt),
-          status: "PENDING",
-          cost: subServiceCost, // Store cost in the booking
+          customerId,
+          cost: subServiceCost,
+          vehicleId: vehicleId || null,
         },
       });
 
-      // Create the payment record for the booking
-      const newPayment = await prisma.payment.create({
-        data: {
-          money: subServiceCost,
-          bookingId: newBooking.id,
-          description: "Payment for booking",
-          status: "PENDING", // Initial status
-        },
-      });
 
-      return res.status(201).json({ booking: newBooking, payment: newPayment });
+      return res.status(201).json({ booking: newBooking });
     } catch (dbError) {
-      console.error("Database error while creating booking:", dbError);
+      console.error("Database error while creating booking and payment:", dbError);
       return res.status(500).json({ error: "Failed to create booking and payment" });
     }
   }
+  
   if (req.method === "GET") {
     let { page = 1, limit = 10 } = req.query;
 
@@ -75,7 +69,9 @@ export default async function handler(req, res) {
             where: { userId: decoded.id }, // ✅ Fetch bookings for a specific customer
             include: {
               user: { select: { name: true } },
-              service: { select: { name: true } }
+              subService: { select: { name: true } },
+              customer: { select: { name: true } }
+
             }
           });
                   console.log(bookings)

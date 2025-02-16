@@ -19,7 +19,6 @@ export default async function handler(req, res) {
       } catch (error) {
         return res.status(401).json({ message: 'Unauthorized: Invalid or expired token' });
       }
-      console.log(decoded)
 
       // Fetch user data from the database
       const user = await prisma.user.findUnique({
@@ -34,6 +33,7 @@ export default async function handler(req, res) {
           role: true,
         },
       });
+      console.log("User API ME.js decoded",decoded)
 
       if (!user) {
         return res.status(404).json({ message: 'User not found' });

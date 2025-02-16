@@ -14,7 +14,7 @@ const ProfilePage = () => {
     const fetchUser = async () => {
       try {
         const { status, body } = await fetchWithAuth("/api/user/me");
-
+        console.log(body)
         if (status === 200) {
           setUser(body.user);
         } else {

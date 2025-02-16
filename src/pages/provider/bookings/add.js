@@ -16,6 +16,16 @@ const AddBooking = () => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
 
+
+
+  const [customerQuery, setCustomerQuery] = useState("");
+  const [customers, setCustomers] = useState([]);
+  const [customer, setCustomer] = useState(null);
+  
+
+  const [selectedVehicle, setSelectedVehicle] = useState("");
+
+
   const router = useRouter();
 
   useEffect(() => {
@@ -82,7 +92,12 @@ const AddBooking = () => {
         employeeId: employee ? parseInt(employee) : null,
         scheduledAt: new Date(scheduledAt).toISOString(),
         status: "PENDING",
+        customerId: parseInt(customer.id),
+        vehicleId: parseInt(selectedVehicle), // 🔥 Now sending vehicleId
+
+
       })
+      console.log(customer)
     try {
       const response = await fetchWithAuth("/api/provider/bookings", {
         method: "POST",
@@ -90,10 +105,12 @@ const AddBooking = () => {
           userId: 1, // Replace with actual user ID from auth context
           serviceProviderId: parseInt(serviceProvider),
           subServiceId: parseInt(subService),
+          customerId: parseInt(customer.id),
           subServiceCost, // Include cost in request
           employeeId: employee ? parseInt(employee) : null,
           scheduledAt: new Date(scheduledAt).toISOString(),
           status: "PENDING",
+          vehicleId: selectedVehicle ? parseInt(selectedVehicle) : null, // ✅ Now sending vehicleId
         }),
         headers: { "Content-Type": "application/json" },
       });
@@ -111,6 +128,56 @@ const AddBooking = () => {
     }
   };
 
+
+  const handleCustomerSearch = async () => {
+    if (!customerQuery) {
+      setError("Enter phone or email to search");
+      return;
+    }
+  
+    setError(null);
+    setLoading(true);
+  
+    // Function to detect if the input is an email or phone number
+    const detectInputType = (input) => {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      const phoneRegex = /^\d{10,15}$/;
+  
+      if (emailRegex.test(input)) return "email";
+      if (phoneRegex.test(input)) return "phoneNumber";
+      return "unknown";
+    };
+  
+    const inputType = detectInputType(customerQuery);
+    if (inputType === "unknown") {
+      setError("Invalid input. Please enter a valid phone number or email.");
+      setLoading(false);
+      return;
+    }
+  
+    try {
+      const queryParam = inputType === "email" ? `email=${customerQuery}` : `phoneNumber=${customerQuery}`;
+      const response = await fetchWithAuth(`/api/provider/user?${queryParam}`);
+      const data = await response.body;
+  
+      if (response.status == 200) {
+        setCustomers(data);
+      } else {
+        setError("Customer not found");
+      }
+    } catch (err) {
+      setError("Error fetching customer");
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const handleSelectCustomer = (selectedCustomer) => {
+    setCustomer(selectedCustomer);
+    setCustomers([]);
+  };
+  
+
   return (
     <ProviderLayout>
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
@@ -121,6 +188,72 @@ const AddBooking = () => {
           {success && <p className="text-green-500">{success}</p>}
 
           <form onSubmit={handleSubmit} className="space-y-4">
+
+          <div>
+  <label className="block text-gray-700">Search Customer</label>
+  <div className="flex space-x-2">
+    <input
+      type="text"
+      value={customerQuery}
+      onChange={(e) => setCustomerQuery(e.target.value)}
+      placeholder="Enter phone or email"
+      className="w-full p-2 border rounded-md focus:ring focus:ring-indigo-300"
+    />
+    <button
+      type="button"
+      onClick={handleCustomerSearch}
+      className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+    >
+      Find
+    </button>
+  </div>
+</div>
+{customer && (
+  <div className="mt-4 p-3 border rounded-md bg-gray-100">
+    <h2 className="text-lg font-semibold text-gray-700">Selected Customer</h2>
+    <p className="font-medium">{customer.name}</p>
+    <p className="text-sm text-gray-500">{customer.email} - {customer.phone}</p>
+    {customer.vehicles.length > 0 ? (
+      <div className="mt-2">
+        <label className="block text-gray-700">Select Vehicle</label>
+        <select
+          value={selectedVehicle}
+          onChange={(e) => setSelectedVehicle(e.target.value)}
+          className="w-full p-2 border rounded-md focus:ring focus:ring-indigo-300"
+        >
+          <option value="" disabled>Select a vehicle</option>
+          {customer.vehicles.map((veh) => (
+            <option key={veh.id} value={veh.id}>
+              {veh.make} {veh.model} - {veh.year}
+            </option>
+          ))}
+        </select>
+      </div>
+    ) : (
+      <p className="text-sm text-red-500">No vehicles found for this customer.</p>
+    )}
+  </div>
+)}
+
+{customers.length > 0 && (
+  <div className="mt-3">
+    <h2 className="text-lg font-semibold text-gray-700">Select Customer</h2>
+    <div className="space-y-2">
+      {customers.map((cust) => (
+        <div
+          key={cust.id}
+          className="p-3 border rounded-md cursor-pointer hover:bg-gray-200"
+          onClick={() => handleSelectCustomer(cust)}
+        >
+          <p className="font-medium">{cust.name}</p>
+          <p className="text-sm text-gray-500">{cust.email} - {cust.phone}</p>
+        </div>
+      ))}
+    </div>
+  </div>
+)}
+
+
             {/* Select Service Provider */}
             <div>
               <label className="block text-gray-700">Select Service Provider</label>

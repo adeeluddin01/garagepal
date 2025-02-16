@@ -21,16 +21,18 @@ const BookingList = () => {
       const response = await fetchWithAuth(`/api/provider/bookings?page=${page}`, {
         method: "GET",
       });
+
       const data = await response.body.bookings;
-      console.log("asdasd",data)
-      if (data.length === 0) {
-        console.log("nonennnne ")
+      console.log("Fetched bookings:", data);
+
+      if (!data || !Array.isArray(data) || data.length === 0) {
         setHasMore(false);
       } else {
         setBookings((prev) => [...prev, ...data]);
         setPage((prev) => prev + 1);
       }
     } catch (err) {
+      console.error("Error fetching bookings:", err);
       setError("Failed to load bookings. Please try again.");
     } finally {
       setLoading(false);
@@ -51,16 +53,18 @@ const BookingList = () => {
   return (
     <ProviderLayout>
       <div className="min-h-screen bg-gray-100 p-6" onScroll={handleScroll}>
-        <h1 className="text-3xl font-bold text-indigo-600 mb-6">Bookings</h1>
+        <h1 className="text-2xl font-bold text-indigo-600 mb-6">Bookings</h1>
         {error && <div className="text-red-500 mb-4">{error}</div>}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 gap-6">
           {bookings.map((booking) => (
             <div key={booking.id} className="bg-white shadow-lg rounded-lg overflow-hidden p-4">
-              <h3 className="text-2xl font-semibold text-indigo-600">
-                {booking.service.name}
+              <h3 className="text-1xl font-semibold text-indigo-600">
+                Service Name: {booking.subService.name} {/* Placeholder for actual service name */}
               </h3>
-              <p className="text-gray-600">Customer: {booking.user.name}</p>
-              <p className="text-gray-500 mt-2">Status: {booking.status}</p>
+              <p className="text-gray-600 font-semibold text-indigo-600">
+                Customer ID: {booking.customer.name} {/* Placeholder for actual customer name */}
+              </p>
+              <p className="text-gray-500 mt-2 font-semibold text-indigo-600">Status: {booking.status}</p>
               <p className="text-gray-500 mt-2">
                 Scheduled: {new Date(booking.scheduledAt).toLocaleString()}
               </p>
