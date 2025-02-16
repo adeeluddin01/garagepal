@@ -57,6 +57,7 @@ export default function Home() {
   if (error) return <p className="text-center text-red-500">{error}</p>;
 
   return (
+    
     <div className="bg-gray-50 font-sans">
 
       

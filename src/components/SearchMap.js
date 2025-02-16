@@ -6,9 +6,9 @@ import L from "leaflet";
 // Fix for missing marker icons
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl: "/marker-icon-2x.png",
+  // iconRetinaUrl: "/marker-icon-2x.png",
   iconUrl: "/marker-icon.png",
-  shadowUrl: "/marker-shadow.png",
+  // shadowUrl: "/marker-shadow.png",
 });
 
 const Map = () => {
@@ -46,11 +46,12 @@ const Map = () => {
   // Handle search query and radius change
   const handleSearch = () => {
     const apiUrl = `/api/search?query=${searchQuery}&radius=${radius}&latitude=${position[0]}&longitude=${position[1]}`;
-
+    
     fetch(apiUrl)
       .then((response) => response.json())
       .then((data) => {
         setServiceProviders(data); // Set service provider data from the API response
+        console.log(serviceProviders)
       })
       .catch((error) => {
         console.error("Error fetching search results", error);

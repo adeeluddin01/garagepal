@@ -29,6 +29,7 @@ export default async function handler(req, res) {
           description,
         },
       });
+      
 
       return res.status(201).json(newServiceProvider);
     } catch (error) {

@@ -8,13 +8,13 @@ export default async function handler(req, res) {
   const { latitude, longitude, radius, query } = req.query;
 
   // Validate required query parameters
-  if (!latitude || !longitude || !radius) {
-    return res.status(400).json({ error: 'Latitude, longitude, and radius are required.' });
+  if (!latitude || !longitude) {
+    return res.status(400).json({ error: 'Latitude and longitude are required.' });
   }
 
   const lat = parseFloat(latitude);
   const lon = parseFloat(longitude);
-  const rad = parseFloat(radius);
+  let rad = radius ? parseFloat(radius) : 10; // Default radius to 10 miles if not provided
 
   // Check if the parameters are valid numbers
   if (isNaN(lat) || isNaN(lon) || isNaN(rad)) {
@@ -24,8 +24,12 @@ export default async function handler(req, res) {
   // Approximate calculation for latitude/longitude degree distance
   const latDegreeDistance = rad / 69; // One degree of latitude = 69 miles
   const lonDegreeDistance = rad / (69 * Math.cos((lat * Math.PI) / 180)); // Adjust longitude distance based on latitude
+// console.log(latDegreeDistance)
+// console.log(lonDegreeDistance)
+console.log(lat,lon)
+console.log(query)
 
-  // Build the where clause for Prisma query
+// Build the where clause for Prisma query
   let whereClause = {
     latitude: {
       gte: lat - latDegreeDistance, // Lower bound for latitude
@@ -37,22 +41,13 @@ export default async function handler(req, res) {
     },
   };
 
-  // Add search query if provided
-  if (query) {
-    whereClause.businessName = {
-      contains: query, // Remove the `mode` field as it's not supported
-    };
-  }
-  // Add search query for services if provided
-  if (query) {
-    whereClause.services = {
-      some: {
-        name: {
-          contains: query, // Filter services by name containing the query
-        },
-      },
-    };
-  }
+// If ry is provided, add OR conditions for businessName and services
+if (query) {
+  whereClause.OR = [
+    { businessName: { contains: query } }, // Removed `mode: 'insensitive'`
+    { services: { some: { name: { contains: query } } } }, // Removed `mode: 'insensitive'`
+  ];
+}
 
   try {
     // Fetch ServiceProviders from Prisma
@@ -63,7 +58,7 @@ export default async function handler(req, res) {
 
     // Return the results
     if (serviceProviders.length === 0) {
-      return res.status(404).json({ message: 'No service providers found within the specified radius.' });
+      return res.status(404).json({ message: 'No service providers found.' });
     }
 
     return res.status(200).json(serviceProviders);
@@ -74,3 +69,4 @@ export default async function handler(req, res) {
     await prisma.$disconnect(); // Ensure Prisma disconnects after the query
   }
 }
+

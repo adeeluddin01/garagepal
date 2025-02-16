@@ -6,7 +6,6 @@ datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
 }
-
 model User {
   id               Int            @id @default(autoincrement())
   email            String?        @unique
@@ -15,8 +14,13 @@ model User {
   name             String
   role             Role
   username         String?        @unique
+  avatar           String?
+  serviceProviders ServiceProvider[] 
   vehicles         Vehicle[]
-  bookings         Booking[]
+  
+  userBookings     Booking[]      @relation("UserBooking") // For userId relation
+  customerBookings Booking[]      @relation("CustomerBooking") // For customerId relation
+
   reviews          Review[]
   notifications    Notification[]
   sentMessages     Message[]      @relation("UserSentMessages")
@@ -133,9 +137,12 @@ model Review {
 model Vehicle {
   id     Int    @id @default(autoincrement())
   userId Int
+  vehicleNo String
+  vin String
   make   String
   model  String
   year   Int
+  pic String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
@@ -163,12 +170,14 @@ model Service {
 model SubService {
   id        Int     @id @default(autoincrement())
   serviceId Int
+  cost Int?
+    description       String  @default("")
+
   name      String
   estimatedTime     String?          // ✅ Add this field
   price     Float?  // ✅ Make it nullable
   service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
 }
-
 
 model Notification {
   id        Int      @id @default(autoincrement())
