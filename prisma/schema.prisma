@@ -6,20 +6,21 @@ datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
 }
+
 model User {
-  id               Int            @id @default(autoincrement())
-  email            String?        @unique
+  id               Int               @id @default(autoincrement())
+  email            String?           @unique
   password         String
-  phoneNumber      String?        @unique
+  phoneNumber      String?           @unique
   name             String
   role             Role
-  username         String?        @unique
+  username         String?           @unique
   avatar           String?
-  serviceProviders ServiceProvider[] 
+  serviceProviders ServiceProvider[]
   vehicles         Vehicle[]
-  
-  userBookings     Booking[]      @relation("UserBooking") // For userId relation
-  customerBookings Booking[]      @relation("CustomerBooking") // For customerId relation
+
+  userBookings     Booking[] @relation("UserBooking") // For userId relation
+  customerBookings Booking[] @relation("CustomerBooking") // For customerId relation
 
   reviews          Review[]
   notifications    Notification[]
@@ -29,7 +30,6 @@ model User {
   updatedAt        DateTime       @updatedAt
   Location         Location[]
 }
-
 
 model Location {
   id        Int   @id @default(autoincrement())
@@ -66,8 +66,8 @@ model ServiceProvider {
   phoneNumber    String
   businessName   String
   ownerName      String
-  userId         Int?             
-  user           User?           @relation(fields: [userId], references: [id], onDelete: Cascade) 
+  userId         Int?
+  user           User?          @relation(fields: [userId], references: [id], onDelete: Cascade)
   location       String
   latitude       Float
   longitude      Float
@@ -79,7 +79,6 @@ model ServiceProvider {
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 }
-
 
 model Review {
   id                Int             @id @default(autoincrement())
@@ -116,10 +115,10 @@ model Service {
 }
 
 model SubService {
-  id        Int     @id @default(autoincrement())
-  serviceId Int
-  cost Int?
-    description       String  @default("")
+  id          Int    @id @default(autoincrement())
+  serviceId   Int
+  cost        Int?
+  description String @default("")
 
   name      String
   service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
@@ -128,8 +127,9 @@ model SubService {
 }
 
 
+
 model Booking {
-  id                Int             @id @default(autoincrement())
+  id                Int           @id @default(autoincrement())
   userId            Int
   serviceProviderId Int
   subServiceId      Int @default(0)
@@ -153,12 +153,12 @@ model Booking {
 
 
 model Payment {
-  id        Int           @id @default(autoincrement())
-  money     Int           @default(0)
-  bookingId Int
+  id          Int           @id @default(autoincrement())
+  money       Int           @default(0)
+  bookingId   Int
   description String?
-  status    PaymentStatus
-  booking   Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  status      PaymentStatus
+  booking     Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
 }
 
 model Notification {
@@ -168,7 +168,6 @@ model Notification {
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
-
 
 model Employee {
   id                Int             @id @default(autoincrement())
@@ -195,4 +194,54 @@ model Message {
   sentAt     DateTime @default(now())
   sender     User     @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
   receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+}
+
+model CustomerOnboarding {
+  id          Int      @id @default(autoincrement())
+  name        String
+  email       String?  @unique
+  phoneNumber String?  @unique
+  latitude    Float
+  longitude   Float
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  customerAvatar String?  // ✅ New field for avatar (optional)
+
+  // Relationship
+  vehicles Vehicle[]
+  bookings CustomerBookingRequest[]
+}
+
+model Vehicle {
+  id         Int    @id @default(autoincrement())
+  userId     Int? // Set it to optional for Manual feeding of data // by Mani
+  customerId Int? // ✅ Added missing customerId
+  vehicleNo  String
+  vin        String
+  make       String
+  model      String
+  year       Int
+  pic        String
+
+  // Relationship
+  customer               CustomerOnboarding?      @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  user                   User?                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  CustomerBookingRequest CustomerBookingRequest[]
+}
+
+model CustomerBookingRequest {
+  id             Int           @id @default(autoincrement())
+  customerId     Int
+  vehicleId      Int
+  serviceId      Int
+  status         BookingStatus @default(PENDING)
+  preferredTime  DateTime?
+  serviceDetails String
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  // Relationships
+  customer CustomerOnboarding @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  vehicle  Vehicle            @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  service  Service            @relation(fields: [serviceId], references: [id], onDelete: Cascade)
 }

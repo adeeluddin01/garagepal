@@ -1,14 +1,45 @@
-import { useEffect, useRef  } from "react";
+import { useEffect, useState } from "react";
 import dynamic from 'next/dynamic';
 import "leaflet/dist/leaflet.css";
 import Navbar from "../components/Navbar.js";
 
-const DynamicMap = dynamic(() => import('../components/SearchMap.js'), {
-  ssr: false, // Disable server-side rendering for the map
-});
 
 export default function Home() {
+  const [garages, setGarages] = useState([]); // Ensure default value is an array
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchGarages = async () => {
+      try {
+        
+        const response = await fetch("/api/provider/garage", );
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        // Ensure data is an array
+        if (Array.isArray(data)) {
+          setGarages(data);
+        } else {
+          setGarages([]);
+        }
+      } catch (err) {
+        console.error("Error fetching garages:", err);
+        setError("Failed to load garages. Please try again later.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchGarages();
+  }, []);
+
   
+
   useEffect(() => {
     const handleScroll = () => {
       document.querySelectorAll(".fade-in").forEach((el) => {
@@ -22,6 +53,9 @@ export default function Home() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
  
+  if (loading) return <p className="text-center">Loading garages...</p>;
+  if (error) return <p className="text-center text-red-500">{error}</p>;
+
   return (
     
     <div className="bg-gray-50 font-sans">
@@ -81,130 +115,86 @@ export default function Home() {
         </div>
       </section>
 
-       {/* Featured Garages Section */}
-        <section id="garages" className="py-12 bg-gray-100 fade-in">
-          <div className="text-left max-w-7xl mx-auto px-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-bold text-gray-800">🏪 Featured Garages</h2>
-              <a href="/garages" className="text-indigo-600 font-semibold text-lg flex items-center hover:underline">
-                View More <span className="ml-2 text-xl">➡</span>
-              </a>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {[1, 2, 3].map((id) => (
-                <a href={`/garages/${id}`} key={id} className="p-6 border rounded-lg bg-white shadow-lg hover:shadow-2xl transition transform hover:-translate-y-1 flex flex-col justify-between relative">
-                  <div className="flex items-center mb-2">
-                    <span className="text-3xl mr-2">🏪</span>
-                    <h3 className="text-lg font-semibold">Garage {id}</h3>
+        {/* 🚗 Featured Garages Section */}
+      <section id="garages" className="py-12 bg-gray-100 fade-in">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-3xl font-bold text-gray-800">🏪 Featured Garages</h2>
+            <a href="/garages" className="text-indigo-600 font-semibold text-lg flex items-center hover:underline">
+              View More <span className="ml-2 text-xl">➡</span>
+            </a>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {garages.length > 0 ? (
+              garages.slice(0, 3).map((garage) => (
+                <div key={garage.id} className="p-6 border rounded-lg bg-white shadow-lg hover:shadow-2xl transition">
+                  <h3 className="text-xl font-semibold text-gray-900 flex items-center">
+                    🏪 {garage.businessName}
+                  </h3>
+                  <p className="text-gray-600 flex items-center mt-2">
+                    📍 <span className="ml-1">{garage.location}</span>
+                  </p>
+
+                  <div className="mt-4 text-sm text-gray-700">
+                    <p>⭐ Average Rating: <span className="font-bold text-yellow-500">4.5</span></p>
+                    <p>💰 Estimated Price: <span className="font-semibold">${garage.price || "N/A"}</span></p>
                   </div>
-                  <div className="bg-gray-200 px-3 py-1 rounded-full text-sm font-semibold text-gray-800 inline-block w-fit">
-                    📍 Location {id}
-                  </div>
-                  <p className="text-gray-600 mt-2">Reliable service and assistance in your area.</p>
-                  <div className="flex justify-between items-center mt-4">
-                    <div>
-                      <span className="text-yellow-500 text-md">⭐ 4.{id} / 5</span>
-                    </div>
-                    <div className="text-gray-800 font-bold">💰 $20/hr</div>
-                  </div>
-                </a>
-              ))}
-            </div>
+
+                  <a href={`/garages/${garage.id}`} className="block mt-4 text-indigo-600 font-semibold hover:underline">
+                    More Details ➜
+                  </a>
+                </div>
+              ))
+            ) : (
+              <p className="text-gray-600">No garages found.</p>
+            )}
           </div>
-        </section>
-
-
-{/* Best Rated Garages Section */}
-<section id="best-rated-garages" className="py-12 bg-white fade-in">
-  <div className="text-left max-w-7xl mx-auto px-6">
-    <div className="flex justify-between items-center mb-4">
-      <h2 className="text-2xl font-bold text-gray-800">🌟 Best Rated Garages</h2>
-      {/* View More Button */}
-      <a href="/best-rated-garages" className="text-indigo-600 font-semibold text-lg flex items-center hover:underline">
-        View More <span className="ml-2 text-xl">➡</span>
-      </a>
-    </div>
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      {[1, 2, 3].map((_, idx) => (
-        <div
-          key={idx}
-          className="p-6 border rounded-lg bg-gray-50 shadow-lg hover:shadow-2xl transition transform hover:-translate-y-1 flex flex-col justify-between relative"
-        >
-          <div className="flex items-center mb-2">
-            <span className="text-3xl mr-2">🏆</span>
-            <h3 className="text-lg font-semibold">Top Garage {idx + 1}</h3>
-          </div>
-          {/* Location placed directly under Garage Name */}
-          <div className="bg-gray-200 px-3 py-1 rounded-full text-sm font-semibold text-gray-800 inline-block w-fit">
-            📍 Location {idx + 1}
-          </div>
-          <p className="text-gray-600 mt-2">Highly rated garage with excellent customer service.</p>
-          <div className="flex justify-between items-center mt-4">
-            <div>
-              <span className="text-yellow-500 text-md">⭐ 4.{idx + 7} / 5</span>
-            </div>
-            <div className="text-gray-800 font-bold">💰 $25/hr</div>
-          </div>
-        </div>
-      ))}
-    </div>
-  </div>
-</section>
-
-
-      
-
-    
-      
-        
-      
-      {/* How It Works */}
-      <section
-        id="features"
-        className="py-16 bg-white text-center fade-in"
-      >
-        <h2 className="text-3xl font-bold text-gray-800 mb-8">
-          How GaragePal Works
-        </h2>
-        <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
-          {[
-            { title: "Describe Your Problem", icon: "🔧" },
-            { title: "Find Nearby Help", icon: "📍" },
-            { title: "Get Back on the Road", icon: "🚗" },
-          ].map((step, idx) => (
-            <div
-              key={idx}
-              className="p-6 border rounded-lg shadow-lg hover:shadow-2xl transform transition hover:-translate-y-1"
-            >
-              <div className="text-4xl mb-4">{step.icon}</div>
-              <h3 className="text-xl font-semibold mb-2">{step.title}</h3>
-              <p className="text-gray-600">
-                {`Step ${idx + 1}: ${step.title}. It's quick, easy, and reliable!`}
-              </p>
-            </div>
-          ))}
         </div>
       </section>
 
-      
+      {/* 🌟 Best Rated Garages Section */}
+      <section id="best-rated-garages" className="py-12 bg-white fade-in">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-3xl font-bold text-gray-800">🌟 Best Rated Garages</h2>
+            <a href="/best-rated-garages" className="text-indigo-600 font-semibold text-lg flex items-center hover:underline">
+              View More <span className="ml-2 text-xl">➡</span>
+            </a>
+          </div>
 
-      {/* Testimonials */}
-      <section id="testimonials" className="py-16 bg-white text-center fade-in">
-        <h2 className="text-3xl font-bold text-gray-800 mb-8">
-          What Our Customers Say
-        </h2>
-        <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
-          {[1, 2].map((_, idx) => (
-            <blockquote key={idx} className="p-6 border-l-4 border-indigo-600">
-              <p className="text-gray-600">
-                "GaragePal saved my day! The mechanic arrived within 20
-                minutes and fixed my car efficiently."
-              </p>
-              <cite className="block mt-4 text-gray-800 font-semibold">
-                John Doe
-              </cite>
-            </blockquote>
-          ))}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {garages.length > 0 ? (
+              garages
+                .sort((a, b) => (b.rating || 0) - (a.rating || 0))
+                .slice(0, 3)
+                .map((garage, idx) => (
+                  <div
+                    key={garage.id}
+                    className="p-6 border rounded-lg bg-gray-50 shadow-lg hover:shadow-2xl transition transform hover:-translate-y-1"
+                  >
+                    <h3 className="text-xl font-semibold text-gray-900 flex items-center">
+                      🏆 {garage.businessName}
+                    </h3>
+                    <p className="text-gray-600 flex items-center mt-2">
+                      📍 <span className="ml-1">{garage.location}</span>
+                    </p>
+
+                    <div className="mt-4 text-sm text-gray-700">
+                      <p>⭐ Average Rating: <span className="font-bold text-yellow-500">{garage.rating || "4.5"}</span></p>
+                      <p>💰 Estimated Price: <span className="font-semibold">${garage.price || "N/A"}</span></p>
+                      <p>⏳ Estimated Time: <span className="font-semibold">{garage.estimatedTime || "Varies"}</span></p>
+                    </div>
+
+                    <a href={`/garages/${garage.id}`} className="block mt-4 text-indigo-600 font-semibold hover:underline">
+                      View Garage ➜
+                    </a>
+                  </div>
+                ))
+            ) : (
+              <p className="text-gray-600">No best-rated garages found.</p>
+            )}
+          </div>
         </div>
       </section>
 
