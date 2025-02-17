@@ -91,19 +91,6 @@ model Review {
 }
 
 
-model Vehicle {
-  id        Int       @id @default(autoincrement())
-  userId    Int
-  vehicleNo String
-  vin       String
-  make      String
-  model     String
-  year      Int
-  pic       String
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  bookings  Booking[] // ✅ One-to-many relationship (a vehicle can have multiple bookings)
-}
 
 model Service {
   id                Int             @id @default(autoincrement())
@@ -212,21 +199,22 @@ model CustomerOnboarding {
   bookings CustomerBookingRequest[]
 }
 
-model Vehicle {
-  id         Int    @id @default(autoincrement())
-  userId     Int? // Set it to optional for Manual feeding of data // by Mani
-  customerId Int? // ✅ Added missing customerId
-  vehicleNo  String
-  vin        String
-  make       String
-  model      String
-  year       Int
-  pic        String
 
+model Vehicle {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  customerId Int? // ✅ Added missing customerId
+  vehicleNo String
+  vin       String
+  make      String
+  model     String
+  year      Int
+  pic       String
+  
   // Relationship
   customer               CustomerOnboarding?      @relation(fields: [customerId], references: [id], onDelete: Cascade)
   user                   User?                    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  CustomerBookingRequest CustomerBookingRequest[]
+  bookings  Booking[] // ✅ One-to-many relationship (a vehicle can have multiple bookings)
 }
 
 model CustomerBookingRequest {
@@ -242,6 +230,4 @@ model CustomerBookingRequest {
 
   // Relationships
   customer CustomerOnboarding @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  vehicle  Vehicle            @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
-  service  Service            @relation(fields: [serviceId], references: [id], onDelete: Cascade)
 }
