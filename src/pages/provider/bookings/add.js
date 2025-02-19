@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { fetchWithAuth } from "../../../utils/api";
-import ProviderLayout from "../../../../components/ProviderLayout";
+import ProviderLayout from "../../../components/ProviderLayout";
 
 const AddBooking = () => {
   const [serviceProvider, setServiceProvider] = useState("");

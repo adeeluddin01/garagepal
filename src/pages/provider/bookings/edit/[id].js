@@ -39,20 +39,13 @@ const AddBooking = () => {
           const bookingData = await res.body;
           setServiceProvider(bookingData.serviceProviderId.toString());
           setSubService(bookingData.subServiceId.toString());
-          setSubServiceCost(bookingData.subServiceCost);
+          setSubServiceCost(bookingData.cost);
+          console.log(bookingData.cost)
           setEmployee(bookingData.employeeId);
           setScheduledAt(new Date(bookingData.scheduledAt).toISOString().slice(0, 16));
           setCustomer(bookingData.customer);
-          console.log(bookingData.customer)
+          console.log(bookingData)
           setSelectedVehicle(bookingData.vehicleId?.toString() || "");
-
-
-          const selectedSubServiceId = bookingData.subServiceId;
-          setSubService(selectedSubServiceId);
-      
-          // Find the selected subservice to get its cost
-          const selectedSubService = filteredSubServices.find((sub) => sub.id === parseInt(selectedSubServiceId));
-          setSubServiceCost(selectedSubService ? selectedSubService.cost : 0);
 
 
         } else {
@@ -138,7 +131,7 @@ const AddBooking = () => {
 
 
       })
-      console.log(customer)
+      console.log(employee)
     try {
         console.log("gff",scheduledAt)
       const response = await fetchWithAuth(`/api/provider/bookings/${id}`, {
@@ -157,9 +150,9 @@ const AddBooking = () => {
         headers: { "Content-Type": "application/json" },
       });
 
-      if (response.status === 201) {
-        setSuccess("Booking added successfully!");
-        setTimeout(() => router.push("/bookings"), 1500);
+      if (response.status === 200) {
+        setSuccess("Booking updated successfully!");
+        setTimeout(() => router.push(`/provider/bookings/view/${id}`), 1500);
       } else {
         setError("Failed to add booking");
       }

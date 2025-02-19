@@ -5,6 +5,7 @@ const prisma = new PrismaClient();
 async function main() {
   console.log("Clearing database...");
 
+  // Delete records in the correct order to avoid foreign key constraints
   await prisma.payment.deleteMany({});
   await prisma.booking.deleteMany({});
   await prisma.vehicle.deleteMany({});
@@ -24,25 +25,25 @@ async function main() {
   console.log("Seeding database...");
 
   // 1️⃣ Create Users (Customers & Service Providers)
-  const createdUsers = await prisma.user.createMany({
+  const users = await prisma.user.createMany({
     data: [
-      { email: "customer1@example.com", password: "$2b$10$ifPdOiyLIXk6OTr3qnT9uOpdVeKKTk1lfd1/RcGrU1LtsQYfdQWo2", phoneNumber: "1111111111", name: "Alice Johnson", role: "CUSTOMER", username: "alicej" },
-      { email: "customer2@example.com", password: "$2b$10$ifPdOiyLIXk6OTr3qnT9uOpdVeKKTk1lfd1/RcGrU1LtsQYfdQWo2", phoneNumber: "2222222222", name: "Bob Smith", role: "CUSTOMER", username: "bobsmith" },
-      { email: "provider1@example.com", password: "$2b$10$ifPdOiyLIXk6OTr3qnT9uOpdVeKKTk1lfd1/RcGrU1LtsQYfdQWo2", phoneNumber: "3333333333", name: "Elite Garage", role: "SERVICE_PROVIDER", username: "elitegarage" },
-      { email: "provider2@example.com", password: "$2b$10$ifPdOiyLIXk6OTr3qnT9uOpdVeKKTk1lfd1/RcGrU1LtsQYfdQWo2", phoneNumber: "4444444444", name: "Speedy Auto", role: "SERVICE_PROVIDER", username: "speedyauto" },
+      { email: "customer1@example.com", password: "$2b$10$YNBIg15ZQW9TKolq.AAbRuscEYuAhEEYEuDwyXOPvYiHHQP7MyBrS", phoneNumber: "1111111111", name: "Alice Johnson", role: "CUSTOMER", username: "alicej" },
+      { email: "customer2@example.com", password: "$2b$10$YNBIg15ZQW9TKolq.AAbRuscEYuAhEEYEuDwyXOPvYiHHQP7MyBrS", phoneNumber: "2222222222", name: "Bob Smith", role: "CUSTOMER", username: "bobsmith" },
+      { email: "provider1@example.com", password: "$2b$10$YNBIg15ZQW9TKolq.AAbRuscEYuAhEEYEuDwyXOPvYiHHQP7MyBrS", phoneNumber: "3333333333", name: "Elite Garage", role: "SERVICE_PROVIDER", username: "elitegarage" },
+      { email: "provider2@example.com", password: "$2b$10$YNBIg15ZQW9TKolq.AAbRuscEYuAhEEYEuDwyXOPvYiHHQP7MyBrS", phoneNumber: "4444444444", name: "Speedy Auto", role: "SERVICE_PROVIDER", username: "speedyauto" },
     ],
   });
 
   console.log("Created Users...");
 
-  const users = await prisma.user.findMany();
-  const serviceProviderUsers = users.filter((user) => user.role === "SERVICE_PROVIDER");
+  const allUsers = await prisma.user.findMany();
+  const serviceProviderUsers = allUsers.filter(user => user.role === "SERVICE_PROVIDER");
 
   // 2️⃣ Create Service Providers
-  const createdGarages = await prisma.serviceProvider.createMany({
+  const garages = await prisma.serviceProvider.createMany({
     data: serviceProviderUsers.map((user, index) => ({
       email: user.email,
-      password: user.password,
+      password: "$2b$10$YNBIg15ZQW9TKolq.AAbRuscEYuAhEEYEuDwyXOPvYiHHQP7MyBrS",
       phoneNumber: user.phoneNumber,
       businessName: index === 0 ? "Elite Auto Care" : "Speedy Garage",
       ownerName: user.name,
@@ -55,7 +56,7 @@ async function main() {
 
   console.log("Created Service Providers...");
 
-  const garages = await prisma.serviceProvider.findMany();
+  const createdGarages = await prisma.serviceProvider.findMany();
 
   // 3️⃣ Create Services and Sub-Services
   const servicesData = [
@@ -64,14 +65,14 @@ async function main() {
     { name: "Engine Services", description: "Engine diagnostics & repair.", subServices: ["Engine Diagnostics", "Timing Belt Replacement", "Fuel System Cleaning"] },
   ];
 
-  for (const garage of garages) {
+  for (const garage of createdGarages) {
     for (const service of servicesData) {
       const createdService = await prisma.service.create({
         data: { name: service.name, description: service.description, serviceProviderId: garage.id },
       });
 
       await prisma.subService.createMany({
-        data: service.subServices.map((sub) => ({
+        data: service.subServices.map(sub => ({
           serviceId: createdService.id,
           name: sub,
           cost: 20,
@@ -83,8 +84,8 @@ async function main() {
     }
   }
 
-  // 4️⃣ Create Locations
-  const customers = users.filter((user) => user.role === "CUSTOMER");
+  // 4️⃣ Create Locations for Customers
+  const customers = allUsers.filter(user => user.role === "CUSTOMER");
 
   await prisma.location.createMany({
     data: customers.map((customer, index) => ({
@@ -96,7 +97,7 @@ async function main() {
 
   console.log("Created Locations...");
 
-  // 5️⃣ Create Vehicles
+  // 5️⃣ Create Vehicles for Customers
   await prisma.vehicle.createMany({
     data: customers.map((customer, index) => ({
       userId: customer.id,
@@ -114,15 +115,15 @@ async function main() {
   // 6️⃣ Create Reviews
   await prisma.review.createMany({
     data: [
-      { userId: customers[0].id, serviceProviderId: garages[0].id, rating: 4.5, comment: "Great service!" },
-      { userId: customers[1].id, serviceProviderId: garages[1].id, rating: 4.0, comment: "Very professional." },
+      { userId: customers[0].id, serviceProviderId: createdGarages[0].id, rating: 4.5, comment: "Great service!" },
+      { userId: customers[1].id, serviceProviderId: createdGarages[1].id, rating: 4.0, comment: "Very professional." },
     ],
   });
 
   console.log("Created Reviews...");
 
   // 7️⃣ Create Employees
-  for (const garage of garages) {
+  for (const garage of createdGarages) {
     await prisma.employee.create({
       data: {
         name: `Mechanic ${garage.businessName}`,
@@ -135,7 +136,7 @@ async function main() {
 
   // 8️⃣ Create Service Provider Availability
   await prisma.availability.createMany({
-    data: garages.map((garage) => ({
+    data: createdGarages.map(garage => ({
       serviceProviderId: garage.id,
       day: "Monday",
       startTime: new Date(),
@@ -151,8 +152,8 @@ async function main() {
 
   await prisma.booking.createMany({
     data: [
-      { userId: customers[0].id, serviceProviderId: garages[0].id, subServiceId: subServices[0].id, vehicleId: vehicles[0].id, status: "CONFIRMED", scheduledAt: new Date(), cost: 100 },
-      { userId: customers[1].id, serviceProviderId: garages[1].id, subServiceId: subServices[3].id, vehicleId: vehicles[1].id, status: "PENDING", scheduledAt: new Date(), cost: 80 },
+      { userId: serviceProviderUsers[0].id, serviceProviderId: createdGarages[0].id, subServiceId: subServices[0].id, vehicleId: vehicles[0].id, status: "CONFIRMED", scheduledAt: new Date(), cost: 100 },
+      { userId: serviceProviderUsers[1].id, serviceProviderId: createdGarages[1].id, subServiceId: subServices[3].id, vehicleId: vehicles[1].id, status: "PENDING", scheduledAt: new Date(), cost: 80 },
     ],
   });
 
@@ -162,7 +163,7 @@ async function main() {
   const bookings = await prisma.booking.findMany();
 
   await prisma.payment.createMany({
-    data: bookings.map((booking) => ({
+    data: bookings.map(booking => ({
       bookingId: booking.id,
       money: booking.cost ?? 0,
       description: "Service Payment",
@@ -174,23 +175,13 @@ async function main() {
 
   // 1️⃣1️⃣ Create Notifications
   await prisma.notification.createMany({
-    data: customers.map((customer) => ({
+    data: customers.map(customer => ({
       userId: customer.id,
       message: "Your booking has been confirmed!",
     })),
   });
 
   console.log("Created Notifications...");
-
-  // 1️⃣2️⃣ Create Messages
-  // await prisma.message.createMany({
-  //   data: [
-  //     { senderId: customers[0].id, receiverId: garages[0].id, content: "Hello, I need a service." },
-  //     { senderId: garages[0].id, receiverId: customers[0].id, content: "Sure, we are available!" },
-  //   ],
-  // });
-
-  // console.log("Created Messages...");
 
   console.log("Seeding Completed!");
 }

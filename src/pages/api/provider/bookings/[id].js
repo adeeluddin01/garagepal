@@ -18,7 +18,7 @@ export default async function handler(req, res) {
     try {
       const decoded = verifyToken(token);
       console.log(decoded, "from booking API");
-
+        console.log(id)
       // Fetch booking details by ID
       const booking = await prisma.booking.findUnique({
         where: {
@@ -26,7 +26,7 @@ export default async function handler(req, res) {
         },
         include: {
             user: { select: { name: true } },
-            serviceProvider: { select: { name: true } },
+            serviceProvider:true,
 
             subService: { select: { name: true } },
             customer: {
@@ -35,7 +35,7 @@ export default async function handler(req, res) {
                 },
               },
               employee: {
-                include: {
+                select: {
                   name: true, // ✅ Include customer vehicles
                 },
               },
@@ -62,14 +62,17 @@ export default async function handler(req, res) {
       const decoded = verifyToken(token);
       console.log(decoded, "from booking API");
 
-      const { status, scheduledAt,subServiceId } = req.body;
-        console.log(req.body)
+      const { status, scheduledAt,subServiceId,customerId,vehicleId,serviceProviderId,employeeId,subServiceCost } = req.body;
+        console.log("REQ BBODY POUT",req.body)
       // Update the booking details in the database
       const updatedBooking = await prisma.booking.update({
         where: {
           id: parseInt(id),
         },
         data: {
+            employeeId,
+            customerId,
+            cost:subServiceCost,
           status, // Example: "Pending", "Completed", "Cancelled"
           scheduledAt: new Date(scheduledAt),
           subServiceId,

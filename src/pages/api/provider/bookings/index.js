@@ -82,7 +82,7 @@ export default async function handler(req, res) {
 
             }
           });
-                  console.log(bookings)
+                  console.log("Bookings",bookings)
       // Count total bookings
       const totalBookings = await prisma.booking.count({
         where: { userId: decoded.id },

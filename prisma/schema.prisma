@@ -173,6 +173,10 @@ model Notification {
 model Employee {
   id                Int             @id @default(autoincrement())
   name              String
+  ssn              String
+  address              String
+  pic              String
+
   serviceProviderId Int
   serviceProvider   ServiceProvider @relation(fields: [serviceProviderId], references: [id], onDelete: Cascade)
   bookings          Booking[]
