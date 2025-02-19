@@ -48,8 +48,16 @@ export default async function handler(req, res) {
         },
       });
 
+      // Create the payment record for the booking
+      const newPayment = await prisma.payment.create({
+        data: {
+          money: subServiceCost,
+          bookingId: newBooking.id,
+          description: "Payment for booking"+newBooking.id+"on"+subServiceCost
+        },
+      });
 
-      return res.status(201).json({ booking: newBooking });
+      return res.status(201).json({ booking: newBooking, payment: newPayment });
     } catch (dbError) {
       console.error("Database error while creating booking and payment:", dbError);
       return res.status(500).json({ error: "Failed to create booking and payment" });

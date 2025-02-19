@@ -157,7 +157,7 @@ model Payment {
   money     Int           @default(0)
   bookingId Int
   description String?
-  status    PaymentStatus
+  status    PaymentStatus @default(PENDING)
   booking   Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
 }
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
-import { fetchWithAuth } from "../../../utils/api";
+import { fetchWithAuth } from "../../../../utils/api";
 import ProviderLayout from "../../../../components/ProviderLayout";
 
 const AddBooking = () => {
@@ -27,6 +27,47 @@ const AddBooking = () => {
 
 
   const router = useRouter();
+  const { id } = router.query;
+
+
+  useEffect(() => {
+    if (!id) return;
+    const fetchBooking = async () => {
+      try {
+        const res = await fetchWithAuth(`/api/provider/bookings/${id}`);
+        if (res.status === 200) {
+          const bookingData = await res.body;
+          setServiceProvider(bookingData.serviceProviderId.toString());
+          setSubService(bookingData.subServiceId.toString());
+          setSubServiceCost(bookingData.subServiceCost);
+          setEmployee(bookingData.employeeId);
+          setScheduledAt(new Date(bookingData.scheduledAt).toISOString().slice(0, 16));
+          setCustomer(bookingData.customer);
+          console.log(bookingData.customer)
+          setSelectedVehicle(bookingData.vehicleId?.toString() || "");
+
+
+          const selectedSubServiceId = bookingData.subServiceId;
+          setSubService(selectedSubServiceId);
+      
+          // Find the selected subservice to get its cost
+          const selectedSubService = filteredSubServices.find((sub) => sub.id === parseInt(selectedSubServiceId));
+          setSubServiceCost(selectedSubService ? selectedSubService.cost : 0);
+
+
+        } else {
+          setError("Failed to fetch booking details");
+        }
+      } catch (err) {
+        setError("Error fetching booking details");
+      }
+    };
+    fetchBooking();
+  }, [id]);
+
+
+
+
 
   useEffect(() => {
     const fetchProviders = async () => {
@@ -60,9 +101,9 @@ const AddBooking = () => {
 
         setFilteredSubServices(allSubServices || []);
         setFilteredEmployees(selectedProvider.employees || []);
-        setSubService(""); // Reset subservice selection
-        setSubServiceCost(0); // Reset cost
-        setEmployee(""); // Reset employee selection
+        // setSubService(""); // Reset subservice selection
+        // setSubServiceCost(0); // Reset cost
+        // setEmployee(""); // Reset employee selection
       }
     } else {
       setFilteredSubServices([]);
@@ -99,8 +140,9 @@ const AddBooking = () => {
       })
       console.log(customer)
     try {
-      const response = await fetchWithAuth("/api/provider/bookings", {
-        method: "POST",
+        console.log("gff",scheduledAt)
+      const response = await fetchWithAuth(`/api/provider/bookings/${id}`, {
+        method: "PUT",
         body: JSON.stringify({
           userId: 1, // Replace with actual user ID from auth context
           serviceProviderId: parseInt(serviceProvider),
@@ -345,7 +387,7 @@ const AddBooking = () => {
               className="w-full py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
               disabled={loading}
             >
-              {loading ? "Adding..." : "Add Booking"}
+              {loading ? "Updating..." : "Update Booking"}
             </button>
           </form>
         </div>
