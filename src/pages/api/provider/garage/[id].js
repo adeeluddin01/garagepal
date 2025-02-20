@@ -55,7 +55,7 @@ export default async function handler(req, res) {
       const decoded = verifyToken(token);
       console.log(decoded, "from garage api");
 
-      const { email, password, phoneNumber, businessName, ownerName, location, latitude, longitude } = req.body;
+      const { email, password, phoneNumber, businessName, ownerName, location, latitude, longitude , avatar} = req.body;
 
       // Update the garage details in the database
       const updatedGarage = await prisma.serviceProvider.update({

@@ -9,50 +9,62 @@ export default async function handler(req, res) {
 
   try {
     const decoded = verifyToken(token);
+
     if (req.method === "GET") {
       try {
-        // Ensure the user is authenticated
         if (!decoded || !decoded.id) {
           return res.status(401).json({ error: "Unauthorized" });
         }
-    
-        // Get all service providers owned by the user
+
         const serviceProviders = await prisma.serviceProvider.findMany({
-          where: { userId: decoded.id }, // ✅ Filter service providers by userId
+          where: { userId: decoded.id },
           select: { id: true },
         });
-    
-        // Extract service provider IDs
+
         const serviceProviderIds = serviceProviders.map(sp => sp.id);
-    
-        // Fetch employees only from these service providers
+
         const employees = await prisma.employee.findMany({
-          where: { serviceProviderId: { in: serviceProviderIds } }, // ✅ Filter employees by serviceProviderId
+          where: { serviceProviderId: { in: serviceProviderIds } },
           select: {
             id: true,
             name: true,
+            ssn: true,
+            address: true,
+            pic: true,
             serviceProvider: { select: { businessName: true } },
           },
         });
-    
+
         return res.status(200).json(employees);
       } catch (error) {
         console.error("Error fetching employees:", error);
         return res.status(500).json({ error: "Internal Server Error" });
       }
     }
-    
 
     if (req.method === "POST") {
-      console.log(req.body)
-      const { name,serviceProviderId } = req.body;
-      if (!name) return res.status(400).json({ error: "Employee name is required" });
-      console.log("DECODED ID",decoded,name)
-      // Create a new employee under the logged-in service provider
+      const { name, serviceProviderId, ssn, address, pic } = req.body;
+
+      if (!name || !serviceProviderId || !ssn || !address) {
+        return res.status(400).json({ error: "All fields are required" });
+      }
+
+      // Ensure service provider belongs to logged-in user
+      const serviceProvider = await prisma.serviceProvider.findUnique({
+        where: { id: parseInt(serviceProviderId) },
+      });
+
+      if (!serviceProvider) {
+        return res.status(403).json({ error: "Invalid service provider" });
+      }
+
       const newEmployee = await prisma.employee.create({
         data: {
           name,
-          serviceProviderId, // Assign to the logged-in service provider
+          ssn,
+          address,
+          pic: pic || null,
+          serviceProviderId: parseInt(serviceProviderId),
         },
       });
 

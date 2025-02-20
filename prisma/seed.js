@@ -7,7 +7,7 @@ async function main() {
   const user1 = await prisma.user.create({
     data: {
       email: 'customer@example.com',
-      password: 'securepassword123',
+      password: 'admin123',
       phoneNumber: '12345678900',
       name: 'Customer One',
       role: Role.CUSTOMER,
@@ -18,7 +18,7 @@ async function main() {
   const serviceProvider = await prisma.serviceProvider.create({
     data: {
       email: 'serviceprovider@example.com',
-      password: 'securepassword123',
+      password: 'admin123',
       phoneNumber: '0987654321',
       businessName: 'Garage Services',
       ownerName: 'John Doe',

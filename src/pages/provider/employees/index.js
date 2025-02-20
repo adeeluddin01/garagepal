@@ -40,9 +40,9 @@ const EmployeeList = () => {
               employees.map((employee) => (
                 <div key={employee.id} className="bg-white shadow-lg rounded-lg overflow-hidden">
                   <img
-                    src="/path/to/employee-image.jpg" // Replace with actual employee image URL
+                    src={employee.pic} // Replace with actual employee image URL
                     alt={employee.name}
-                    className="w-full h-48 object-cover"
+                    className="w-full h-60 object-full"
                   />
                   <div className="p-4">
                     <h3 className="text-2xl font-semibold text-indigo-600">{employee.name}</h3>

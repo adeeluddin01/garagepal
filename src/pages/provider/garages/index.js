@@ -47,7 +47,7 @@ const GarageList = () => {
       loadGarages(); // Load more garages when scrolled to bottom
     }
   };
-
+console.log(garages)
   return (
 
 <ProviderLayout>
@@ -59,7 +59,7 @@ const GarageList = () => {
         {garages.map((garage) => (
           <div key={garage.id} className="bg-white shadow-lg rounded-lg overflow-hidden">
             <img
-              src="/path/to/garage-image.jpg" // You can replace this with an actual image URL
+              src={garage.avatar} 
               alt={garage.businessName}
               className="w-full h-48 object-cover"
             />

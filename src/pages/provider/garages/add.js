@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useRouter } from "next/router";
 import { fetchWithAuth } from "../../../utils/api"; // Import the fetchWithAuth utility
 import ProviderLayout from "../../../components/ProviderLayout";
+import FileUpload from "../../../components/FileUpload";
 
 const AddServiceProvider = () => {
   const [formData, setFormData] = useState({
@@ -13,6 +14,7 @@ const AddServiceProvider = () => {
     location: "",
     latitude: "",
     longitude: "",
+    avatar: "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -50,6 +52,9 @@ const AddServiceProvider = () => {
     } finally {
       setLoading(false);
     }
+  };
+  const handleUpload = (fileUrl) => {
+    setFormData({ ...formData, avatar: fileUrl });
   };
 
   return (
@@ -178,6 +183,11 @@ const AddServiceProvider = () => {
               required
               className="w-full p-2 mt-1 border border-gray-300 rounded-md"
             />
+          </div>
+          {/* Upload Garage Image */}
+          <div className="flex flex-col">
+              <label className="text-gray-600 text-sm font-medium">Garage Image</label>
+              <FileUpload onUpload={handleUpload} />
           </div>
         </div>
 

@@ -117,7 +117,7 @@ const AddBooking = () => {
 
       if (response.status === 201) {
         setSuccess("Booking added successfully!");
-        setTimeout(() => router.push("/bookings"), 1500);
+        setTimeout(() => router.push("/provider/bookings"), 1500);
       } else {
         setError("Failed to add booking");
       }

@@ -16,7 +16,7 @@ export default async function handler(req, res) {
       console.log(decoded, "from garage api");
 
       // After successful token verification, proceed with the database operation
-      const { email, password, phoneNumber, businessName, ownerName, location, latitude, longitude } = req.body;
+      const { email, password, phoneNumber, businessName, ownerName, location, latitude, longitude , avatar} = req.body;
 
       try {
         // Create a new service provider (garage)
@@ -28,10 +28,10 @@ export default async function handler(req, res) {
             businessName,
             ownerName,
             userId:decoded.id,
-            avatar,
             location,
             latitude: parseFloat(latitude),
             longitude: parseFloat(longitude),
+            avatar,
           },
         });
 

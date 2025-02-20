@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { fetchWithAuth } from "../../../../utils/api"; // Import the fetchWithAuth utility
 import ProviderLayout from "../../../../components/ProviderLayout";
+import FileUpload from "../../../../components/FileUpload";
 
 const EditGarage = () => {
   const router = useRouter();
@@ -16,6 +17,7 @@ const EditGarage = () => {
     location: "",
     latitude: "",
     longitude: "",
+    avatar: "",
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -41,6 +43,7 @@ const EditGarage = () => {
             location: data.location,
             latitude: data.latitude,
             longitude: data.longitude,
+            avatar: data.avatar,
           });
         } catch (err) {
           setError(err.message);
@@ -66,7 +69,7 @@ const EditGarage = () => {
     setIsSubmitting(true);
 
     try {
-      const response = await fetchWithAuth(`/api/provider/garage/${id}`, {
+      const updatedGarage = await fetchWithAuth(`/api/provider/garage/${id}`, {
         method: "PUT",
         body: JSON.stringify(formData),
         headers: {
@@ -74,17 +77,18 @@ const EditGarage = () => {
         },
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to update garage");
-      }
+      console.log("Update successful:", updatedGarage);
 
-      const updatedGarage = await response.json();
-      router.push(`/garages/${updatedGarage.id}`); // Redirect to the updated garage view page
+    // ✅ Redirect only after successful update
+    router.push(`/provider/garages/view/${id}`);
     } catch (err) {
       setError(err.message);
     } finally {
       setIsSubmitting(false);
     }
+  };
+  const handleUpload = (fileUrl) => {
+    setFormData({ ...formData, avatar: fileUrl });
   };
 
   if (loading) {
@@ -211,6 +215,11 @@ const EditGarage = () => {
               onChange={handleInputChange}
               className="w-full px-4 py-2 mt-2 border rounded-md"
             />
+          </div>
+          {/* Upload Garage Image */}
+          <div className="flex flex-col">
+              <label className="text-gray-600 text-sm font-medium">Garage Image</label>
+              <FileUpload onUpload={handleUpload} />
           </div>
 
           <div className="mb-4">
