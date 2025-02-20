@@ -69,8 +69,9 @@ model ServiceProvider {
   userId         Int?             
   user           User?           @relation(fields: [userId], references: [id], onDelete: Cascade) 
   location       String
-  latitude       Float
-  longitude      Float
+  latitude       Float?
+  longitude      Float?
+  avatar         String?
   services       Service[]
   employees      Employee[]
   reviews        Review[]

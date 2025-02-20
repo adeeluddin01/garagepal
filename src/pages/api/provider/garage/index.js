@@ -28,6 +28,7 @@ export default async function handler(req, res) {
             businessName,
             ownerName,
             userId:decoded.id,
+            avatar,
             location,
             latitude: parseFloat(latitude),
             longitude: parseFloat(longitude),
@@ -73,6 +74,7 @@ export default async function handler(req, res) {
           longitude: true,
           createdAt: true,
           employees: true,
+          avatar: true,
 
           services: {
             select: {

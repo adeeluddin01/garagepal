@@ -69,6 +69,7 @@ export default async function handler(req, res) {
           businessName,
           ownerName,
           location,
+          avatar,
           latitude: parseFloat(latitude),
           longitude: parseFloat(longitude),
         },
