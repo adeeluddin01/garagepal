@@ -204,7 +204,7 @@ model Vehicle {
   id        Int       @id @default(autoincrement())
   userId    Int
   customerId Int? // ✅ Added missing customerId
-  vehicleNo String
+  vehicleNo String @unique
   vin       String
   make      String
   model     String

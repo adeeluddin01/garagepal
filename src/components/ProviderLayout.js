@@ -16,7 +16,7 @@ const ProviderLayout = ({ children }) => {
     { name: "Garages", icon: <FaGg />, route: "/provider/garages" },
     { name: "Employees", icon: <FaUsers />, route: "/provider/employees" },
     { name: "Bookings", icon: <FaClipboardList />, route: "/provider/bookings" },
-    { name: "Customers", icon: <FaUsers />, route: "/provider/customer" },
+    { name: "Customers", icon: <FaUsers />, route: "/provider/customer-onboarding" },
   ];
 
   // Toggle dark mode
