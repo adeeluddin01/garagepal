@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import GarageMap from "../../components/GarageMap";
 import Navbar from "../../components/Navbar";
-import { fetchWithAuth } from "../../utils/api";
+
 const GaragesPage = () => {
   const [userLocation, setUserLocation] = useState(null);
   const [garages, setGarages] = useState([]);
@@ -24,97 +24,125 @@ const GaragesPage = () => {
     }
   }, []);
 
-  // Fetch garages from your API
   const fetchGarages = async (location) => {
     try {
+      const token = localStorage.getItem("token"); // ✅ Get stored token (if exists)
+  
       const response = await fetch(
-        `/api/search?query=${searchQuery}&latitude=${location.lat}&longitude=${location.lng}&radius=${radius}`
+        `/api/user/garage?latitude=${location.lat}&longitude=${location.lng}`,
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}, // ✅ Send token only if available
+        }
+      );
+  
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+  
+      const data = await response.json();
+      setGarages(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Error fetching garages:", error);
+    }
+  };
+  
+  
+
+  // ✅ Handles search query and radius change
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    if (!userLocation) return;
+
+    try {
+      const response = await fetch(
+        `/api/user/garage?query=${searchQuery}&radius=${radius}&latitude=${userLocation.lat}&longitude=${userLocation.lng}`
       );
 
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
-       console.log("RESSS",response)
 
       const data = await response.json();
-      console.log("RESSS",data)
-
       setGarages(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error("Error fetching garages:", error);
-      // alert("⚠️ Failed to fetch garage data.");
-    }
-  };
-
-  // Handle search query and radius change
-  const handleSearch = async (e) => {
-    e.preventDefault();
-    if (!userLocation) return;
-
-    const apiUrl = `/api/search?query=${searchQuery}&radius=${radius}&latitude=${userLocation.lat}&longitude=${userLocation.lng}`;
-
-    try {
-      const response = await fetch(apiUrl);
-      const data = await response.json();
-      setGarages(Array.isArray(data) ? data : []);
-
-      // setGarages(data); // Update garages list based on search
     } catch (error) {
       console.error("Error fetching search results", error);
     }
   };
 
   return (
-    <div className="bg-gray-50 font-sans h-screen">
+    <div className="bg-gradient-to-br from-white to-gray-100 min-h-screen font-sans">
       <Navbar />
       <div className="relative flex h-full mt-16">
-        {/* Sidebar */}
-        <div className="w-80 bg-white shadow-lg p-4 overflow-y-auto">
-          <h2 className="text-xl font-semibold mb-4">🔍 Filter Garages</h2>
+        {/* Sidebar with Filters */}
+        <div className="w-80 bg-white shadow-xl rounded-xl p-5 overflow-y-auto">
+          <h2 className="text-2xl font-semibold mb-4 text-gray-800">🔍 Find Garages</h2>
           <form onSubmit={handleSearch}>
             <div className="mb-4">
-              <label className="block font-medium">Search:</label>
+              <label className="block font-medium text-gray-700">Search:</label>
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Garage name or service"
-                className="w-full p-2 border rounded"
+                className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
               />
             </div>
             <div className="mb-4">
-              <label className="block font-medium">Radius (km):</label>
+              <label className="block font-medium text-gray-700">Radius (km):</label>
               <input
                 type="number"
                 value={radius}
                 onChange={(e) => setRadius(e.target.value)}
-                className="w-full p-2 border rounded"
+                className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
               />
             </div>
             <button
               type="submit"
-              className="w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700"
+              className="w-full bg-indigo-600 text-white py-2 rounded-lg shadow-md hover:bg-indigo-700 transition duration-200"
             >
               Search
             </button>
           </form>
 
-          {/* List of garages */}
+          {/* 🏪 List of Garages */}
           <div className="mt-6">
-            {garages.map((garage) => (
-              <div key={garage.id} className="p-4 border-b">
-                <h2 className="text-lg font-semibold">{garage.businessName}</h2>
-                <p>{garage.location}</p>
-                <a href={`/garages/${garage.id}`} className="text-indigo-600">
-                  View Details
-                </a>
-              </div>
-            ))}
+            {garages.length > 0 ? (
+              garages.map((garage) => (
+                <div
+                  key={garage.id}
+                  className="p-4 bg-white border border-gray-200 rounded-lg shadow-md mb-4 flex items-center gap-4 transition transform hover:scale-105"
+                >
+                  {/* Garage Image */}
+                  <div className="w-24 h-24 rounded-lg overflow-hidden shadow-md">
+                    <img
+                      src={garage.avatar ? garage.avatar : "/default-garage.jpg"} // ✅ Fallback image
+                      alt={garage.businessName}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+
+                  {/* Garage Details */}
+                  <div className="flex-1">
+                    <h2 className="text-lg font-semibold text-gray-900">{garage.businessName}</h2>
+                    <p className="text-gray-600">{garage.location}</p>
+                    <a
+                      href={`/garages/${garage.id}`}
+                      className="text-indigo-600 font-medium hover:underline"
+                    >
+                      View Details →
+                    </a>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="text-gray-500">No garages found.</p>
+            )}
           </div>
+
         </div>
 
-        {/* Full-width map */}
-        <div className="flex-1">
+        {/* 📍 Full-width Map */}
+        <div className="flex-1 p-4">
           <GarageMap garages={garages} userLocation={userLocation} />
         </div>
       </div>
