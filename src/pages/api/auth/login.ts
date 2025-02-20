@@ -4,17 +4,21 @@ import jwt from 'jsonwebtoken';
 import prisma from '../../../lib/prisma';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method === 'POST') {
-    const { login, password } = req.body;
-    console.log(req.body);
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method Not Allowed' });
+  }
 
-    // Find the user by email, username, or phone number
+  const { login, password } = req.body;
+  console.log("Login request received:", req.body);
+
+  try {
+    // ✅ Fix: Use "username" instead of "name"
     const user = await prisma.user.findFirst({
       where: {
         OR: [
           { email: login },
           { phoneNumber: login },
-          { name: login }, // Assuming "name" is used as the username
+          { username: login }, // ✅ Corrected field
         ],
       },
     });
@@ -23,23 +27,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(404).json({ error: 'User not found' });
     }
 
-    const isValid = await bcrypt.compare(password, user.password);
+    // ✅ Fix: Check if password is hashed
+    let isValid = false;
+    if (user.password.startsWith('$2b$')) { // If hashed (bcrypt)
+      isValid = await bcrypt.compare(password, user.password);
+    } else {
+      isValid = password === user.password; // If plain text
+    }
+
     if (!isValid) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
+    // ✅ Fix: Ensure JWT_SECRET is loaded
     const jwtSecret = process.env.JWT_SECRET;
-    console.log(jwtSecret);
-    
-    // Ensure JWT_SECRET is defined
     if (!jwtSecret) {
-      return res.status(500).json({ error: 'JWT_SECRET is not defined in environment variables' });
+      console.error("JWT_SECRET is missing from environment variables.");
+      return res.status(500).json({ error: 'Internal Server Error' });
     }
 
-    // Generate JWT tokens
+    // ✅ Generate JWT Tokens
     const accessToken = jwt.sign({ id: user.id, role: user.role }, jwtSecret, { expiresIn: '15m' });
     const refreshToken = jwt.sign({ id: user.id }, jwtSecret, { expiresIn: '7d' });
 
-    res.status(200).json({ accessToken, refreshToken });
+    return res.status(200).json({ accessToken, refreshToken, user });
+
+  } catch (error) {
+    console.error("Login error:", error);
+    return res.status(500).json({ error: 'Internal Server Error' });
   }
 }

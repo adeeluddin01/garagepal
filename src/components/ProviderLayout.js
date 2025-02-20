@@ -1,7 +1,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { FaHome, FaGg, FaUsers } from "react-icons/fa"; // Icons for sidebar
+import { FaHome, FaGg, FaUsers, FaClipboardList } from "react-icons/fa"; // Icons for sidebar
 
 const ProviderLayout = ({ children }) => {
   const [activeSection, setActiveSection] = useState("dashboard"); // Track active section
@@ -12,11 +12,11 @@ const ProviderLayout = ({ children }) => {
     { name: "Dashboard", icon: <FaHome />, route: "/provider/dashboard" },
     { name: "Garages", icon: <FaGg />, route: "/provider/garages" },
     { name: "Employees", icon: <FaUsers />, route: "/provider/employees" },
-    { name: "Bookings", icon: <FaUsers />, route: "/provider/bookings" },
-    { name: "Customers", icon: <FaUsers />, route: "/provider/customers" },
-
-
+    { name: "Bookings", icon: <FaClipboardList />, route: "/provider/bookings" },
+    { name: "Customers", icon: <FaUsers />, route: "/provider/customer-onboarding" },
   ];
+
+
 
   return (
     <div className="flex min-h-screen">

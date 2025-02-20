@@ -129,6 +129,7 @@ model SubService {
 }
 
 
+
 model Booking {
   id                Int             @id @default(autoincrement())
   userId            Int
@@ -200,4 +201,53 @@ model Message {
   sentAt     DateTime @default(now())
   sender     User     @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
   receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+}
+
+model CustomerOnboarding {
+  id          Int      @id @default(autoincrement())
+  name        String
+  email       String?  @unique
+  phoneNumber String?  @unique
+  latitude    Float
+  longitude   Float
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  customerAvatar String?  // ✅ New field for avatar (optional)
+
+  // Relationship
+  vehicles Vehicle[]
+  bookings CustomerBookingRequest[]
+}
+
+
+model Vehicle {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  customerId Int? // ✅ Added missing customerId
+  vehicleNo String @unique
+  vin       String
+  make      String
+  model     String
+  year      Int
+  pic       String
+  
+  // Relationship
+  customer               CustomerOnboarding?      @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  user                   User?                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookings  Booking[] // ✅ One-to-many relationship (a vehicle can have multiple bookings)
+}
+
+model CustomerBookingRequest {
+  id             Int           @id @default(autoincrement())
+  customerId     Int
+  vehicleId      Int
+  serviceId      Int
+  status         BookingStatus @default(PENDING)
+  preferredTime  DateTime?
+  serviceDetails String
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  // Relationships
+  customer CustomerOnboarding @relation(fields: [customerId], references: [id], onDelete: Cascade)
 }
